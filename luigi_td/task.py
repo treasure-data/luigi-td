@@ -54,9 +54,8 @@ class HourlyScheduled(Scheduled):
 
 class Query(luigi.Task, QueryResult):
     type = 'hive'
-    database = luigi.Parameter()
-    query = luigi.Parameter()
-    header = None
+    database = None
+    query = None
     variables = {}
 
     @property
@@ -74,8 +73,7 @@ class Query(luigi.Task, QueryResult):
         pass
 
     def query_body(self):
-        query = file(self.resolve('query')).read()
-        return jinja2.Template(query).render(task=self, **self.resolve('variables'))
+        return file(self['query']).read()
 
     def output(self):
         return config.state_store.get_target(self)
@@ -83,7 +81,7 @@ class Query(luigi.Task, QueryResult):
     def run(self):
         # build a query
         header = self.query_header()
-        query = self.query_body()
+        query = jinja2.Template(self.query_body()).render(task=self, **self.resolve('variables'))
         if header:
             query = header + "\n" + query
         # run the query
@@ -92,13 +90,21 @@ class Query(luigi.Task, QueryResult):
                        query,
                        type = self.type,
                        result_url = self.get_result_url())
+        job._update_status()
+        logger.info("{task}: td.job_url: {url}".format(task=self, url=job.url))
         # wait for the result
         while not job.finished():
             time.sleep(2)
         job._update_status()
+        logger.info("{task}: td.job_result: id={job_id} status={status} elapsed={elapsed}".format(
+            task = self,
+            job_id = job.job_id,
+            status = job.status(),
+            elapsed = '(not implemented)',
+        ))
         # output
         target = self.output()
-        target.save({'job_id': job.job_id, 'status': job.status()})
+        target.save_state({'job_id': job.job_id, 'status': job.status()})
         if not job.success():
             stderr = job._debug['stderr']
             if stderr:

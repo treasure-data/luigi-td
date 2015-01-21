@@ -1,3 +1,5 @@
+from luigi_td.config import config
+
 import os
 import json
 import luigi
@@ -7,9 +9,44 @@ logger = logging.getLogger('luigi-interface')
 
 __all__ = ['MemoryStateTarget', 'MemoryStateStore', 'LocalStateTarget', 'LocalStateStore']
 
+class StateTarget(luigi.Target):
+    @property
+    def job(self):
+        if not hasattr(self, '_job'):
+            td = config.get_client()
+            self._job = td.job(self.state['job_id'])
+        return self._job
+
+    @property
+    def job_id(self):
+        return self.state['job_id']
+
+    @property
+    def status(self):
+        return self.state['status']
+
+    @property
+    def size(self):
+        return self.job._result_size
+
+    @property
+    def columns(self):
+        return self.job._hive_result_schema
+
+    def cursor(self):
+        return self.job.result()
+
+    def dump(self, path):
+        with file(path, 'w') as f:
+            f.write("\t".join([c[0] for c in self.columns]))
+            f.write("\n")
+            for row in self.cursor():
+                f.write("\t".join([str(c) for c in row]))
+                f.write("\n")
+
 # Memory state
 
-class MemoryStateTarget(luigi.Target):
+class MemoryStateTarget(StateTarget):
     def __init__(self):
         self.state = None
 
@@ -18,7 +55,7 @@ class MemoryStateTarget(luigi.Target):
             return True
         return False
 
-    def save(self, state):
+    def save_state(self, state):
         self.state = state
 
 class MemoryStateStore(object):
@@ -32,26 +69,30 @@ class MemoryStateStore(object):
 
 # Local state
 
-class LocalStateTarget(luigi.Target):
+class LocalStateTarget(StateTarget):
     def __init__(self, path):
         self.path = path
 
     def exists(self):
         if not os.path.exists(self.path):
             return False
-        with file(self.path) as f:
-            state = json.load(f)
+        state = self.state
         if state['status'] == 'success':
             return True
-        td = _config.get_client()
+        td = config.get_client()
         job = td.job(state['job_id'])
         if job.success():
             return True
         return False
 
-    def save(self, state):
+    def save_state(self, state):
         with file(self.path, 'w') as f:
             json.dump(state, f)
+
+    @property
+    def state(self):
+        with file(self.path) as f:
+            return json.load(f)
 
 class LocalStateStore(object):
     def __init__(self, state_dir):
