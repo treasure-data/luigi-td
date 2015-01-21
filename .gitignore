@@ -2,3 +2,5 @@
 build
 dist
 luigi_td.egg-info
+docs/_build
+docs/_build_html
