@@ -1,0 +1,4 @@
+*.pyc
+build
+dist
+luigi_td.egg-info
