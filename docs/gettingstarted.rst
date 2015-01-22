@@ -5,7 +5,7 @@ Getting Started
 Installation
 ============
 
-Assuming you have already installed Python, you can install luigi-td by ``pip``::
+Assuming you have already installed Python, you can install Luigi-td by ``pip``::
 
   $ pip install luigi-td
 
@@ -18,11 +18,11 @@ Set ``TD_API_KEY`` to your API key::
 
 If you have a configuration file for Luigi (``/etc/luigi/client.cfg`` by default), you can add a ``[td]`` section in it::
 
-  # configuration for luigi
+  # configuration for Luigi
   [core]
-  error-email: luigi@example.com
+  error-email: you@example.com
 
-  # configuration for luigi-td
+  # configuration for Luigi-td
   [td]
   api-key: 1/1c410625...
 
@@ -131,11 +131,9 @@ As you can see in this example, our second task ``MyQueryResult`` requires ``MyQ
 Processing the Result
 =====================
 
-At the time our second query ``MyQueryResult`` is called, the query result has not been downloaded yet.  Unless it is adequately small, you should save the result into a local file before processing so you can avoid downloading it again on errors.  That's why we need another step in our data workflow.
+At the time our second query ``MyQueryResult`` is called, the query result has not been downloaded yet.  Unless it is adequately small, you should save the result into a local file before processing so you can avoid downloading it twice on processing errors.  That's why we need another step in our data workflow.
 
-Suppose you had a bug in your data processing code.  If you didn't save the result, you would run the same query and download the result again and again until you successfully fixed the bug.  You shouldn't do that.  Instead, you can easily save the result locally and let Luigi to skip running the same query.
-
-The ``dump()`` method, combined with ``luigi.LocalTarget``, can be used for saving query results to local files::
+Suppose you had a bug in your data processing code.  If you didn't save the result, you would run the same query again and again until you fixed the bug.  Instead, you can use the ``dump()`` method, combined with ``luigi.LocalTarget``, to save query results to local files and let Luigi to skip running the same query::
 
   class MyQueryResultDump(luigi.Task):
       def requires(self):
@@ -163,124 +161,116 @@ The ``dump()`` method, combined with ``luigi.LocalTarget``, can be used for savi
 Outputting the Result
 =====================
 
-You might want to send the results of queries to some cloud services, instead of saving them to your local machine.  luigi-td supports various output classes that transfer the results to remote servers, either directly from Treasure Data or indirectly through an intermediate server.
+You might want to send query results to cloud services without saving them to your local machine.  Luigi-td supports various output classes that transfer the results to remote servers, either directly from Treasure Data or indirectly through an intermediate server.
 
-The primitive way of using result outputs is to define ``result_url``::
+The primitive way of using result outputs is to set ``result_url`` in your query class::
 
   class MyOutputQuery(luigi_td.Query):
       type = 'presto'
       database = 'sample_datasets'
 
-      # the output does to S3
+      # the output goes to S3
       result_url = 's3://XXX/my_output_bucket'
 
       # alternatively, you can define a property
-      @property
-      def result_url(self):
-          return 's3://XXX/my_output_bucket'
+      # @property
+      # def result_url(self):
+      #     return 's3://XXX/my_output_bucket'
 
       def query_body(self):
           return "SELECT count(1) cnt FROM www_access"
 
-See `Job Result Output <http://docs.treasuredata.com/categories/result>`_ for the list of available result output options.
+See `Job Result Output <http://docs.treasuredata.com/categories/result>`_ for the list of available result output targets.
 
-It is sometimes convenient to use pre-defined output classes.  For example, you can mixin ``luigi_td.S3ResultOutput`` to your query and get the result output to Amazon S3::
+Luigi-td provides several pre-defined output classes for convenience.  For example, you can mixin ``luigi_td.S3ResultOutput`` to your query and get the result output to Amazon S3::
 
-  class MyOutputQuery(luigi_td.Query, luigi_td.S3ResultOutput):
+  class MyQueryResultOutput(luigi_td.Query, luigi_td.S3ResultOutput):
       type = 'presto'
       database = 'sample_datasets'
 
-      aws_access_key_id = 'xxx'
-      aws_secret_access_key = 'xxx'
-      s3_bucket = 'my_output_bucket'
-      s3_prefix = 'luigi-td/output/'
+      aws_access_key_id = '...'
+      aws_secret_access_key = '...'
+      s3_path = 'my_output_bucket/luigi-td/file.csv'
 
       def query_body(self):
           return "SELECT count(1) cnt FROM www_access"
 
 See "Result Output" for the list of available classes.
 
-Passing Parameters
-==================
-
-It is often useful to use paramters to build queries dynamically.  You can define parameters in the same way as regular Luigi tasks::
-
-  class MyQueryWithParameters(luigi_td.Query):
-      type = 'presto'
-      database = 'sample_datasets'
-
-      # parameters
-      foo = luigi.Parameter()
-
-      def query_body(self):
-          return "SELECT count(1) cnt FROM www_access WHERE host = '{foo}'".format(
-              foo = self.foo
-          )
-
-Now you can pass parameters as command line arguments::
-
-  $ python tutorial.py MyQueryWithParameters --local-scheduler --foo bar
-  INFO: Scheduled MyQueryWithParameters(foo=bar) (PENDING)
-  ...
-
-Or you can build a task dynamically in your script::
-
-  class AnotherTask(luigi.Task):
-      def requires(self):
-          return MyQueryWithParameters(foo='bar')
-
-See "Parameters" for how to use parameters in Luigi.
-
 Templating Queries
 ==================
 
-luigi-td uses `Jinja2 <http://jinja.pocoo.org/>`_ as the default template engine.  Your quries will be rendered as Jinja2 templates at run time::
+Luigi-td uses `Jinja2 <http://jinja.pocoo.org/>`_ as the default template engine.  Query strings are rendered as Jinja2 templates at run time::
 
   class MyTemplateQuery(luigi_td.Query):
       type = 'presto'
       database = 'sample_datasets'
+
+      # variables used in the template
+      target_table = 'www_access'
 
       def query_body(self):
-          return '''
-              {# query string is a Jinja2 template #}
-              SELECT count(1) cnt FROM {{ "www_access" }}
-          '''
+          # query string is rendered as a Jinja2 template
+          return "SELECT count(1) cnt FROM {{ task.target_table }}"
 
-You may want to write queries in separate files from the script.  Just define the file name to ``query`` in this case::
+As you can see in this example, a single variable ``task`` is available in templates.  The value of ``task`` is the instance of your query class.  As a result, the template ``{{ task.target_table }}`` will be replaced by ``www_access`` at run time.  You can set any variables or methods in your class and access to them through ``task``.
 
-  class MyTemplateQuery(luigi_td.Query):
+If you prefer defining variables explicitly, set a dictionaly ``variables``::
+
+  class MyTemplateQueryWithVariables(luigi_td.Query):
       type = 'presto'
       database = 'sample_datasets'
-      query = 'templates/my_template_query.sql'
-
-::
-
-  -- templates/my_template_query.sql
-  SELECT count(1) cnt FROM www_access
-
-A single variable ``task`` is defined in the template by default.  The value of ``task`` is the instance of your query (= ``luigi_td.Query``).  Thus, this template::
-
-  -- {{ task }}
-  SELECT count(1) cnt
-  FROM {{ task.database }}.www_access
-
-will be converted as follows::
-
-  -- MyTemplateQuery()
-  SELECT count(1) cnt
-  FROM sample_datasets.www_access
-
-You can pass arbitrary parameters to the template by defining variables or methods in your query class and accessing them through ``task``.  Or if you prefer to defining variables explicitly, you can do that as follows::
-
-  class MyTemplateQuery(luigi_td.Query):
-      type = 'presto'
-      database = 'sample_datasets'
-      query = 'templates/my_template_query.sql'
       variables = {
-          'table': 'www_access'
+          'target_table': 'www_access'
+      }
+
+      def query_body(self):
+          return "SELECT count(1) cnt FROM {{ target_table }}"
+
+You might want to store your queries in separate files instead of writing them within the script.  Just set your query file name to ``query``.  This is the most common case how you will define your queries::
+
+  class MyTemplateFileQuery(luigi_td.Query):
+      type = 'presto'
+      database = 'sample_datasets'
+      query = 'templates/query.sql'
+      variables = {
+          'target_table': 'www_access'
       }
 
 ::
 
-  -- templates/my_template_query.sql
-  SELECT count(1) cnt FROM {{ table }}
+  -- templates/query.sql
+  SELECT count(1) cnt FROM {{ target_table }}
+
+Passing Parameters
+==================
+
+Luigi supports passing parameters as command line options or constructor arguments.  Parameters can be used to build queries dynamically::
+
+  class MyQueryWithParameters(luigi_td.Query):
+      type = 'presto'
+      database = 'sample_datasets'
+      query = 'templates/query_with_time_range.sql'
+
+      # parameters
+      target_date = luigi.DateParameter()
+
+::
+
+  -- templates/query_with_time_range.sql
+  SELECT count(1) cnt
+  FROM www_access
+  WHERE td_time_range(time, td_time_add('{{ task.target_date }}', '-1d'), '{{ task.target_date }}')
+
+You can pass parameters as command line options::
+
+  $ python tutorial.py MyQueryWithParameters --local-scheduler --target-date 2015-01-01
+  INFO: Scheduled MyQueryWithParameters(target_date=2015-01-01) (PENDING)
+  ...
+
+The query template is rendered using parameters, and you will get the following query as a result::
+
+  -- templates/query_with_time_range.sql
+  SELECT count(1) cnt
+  FROM www_access
+  WHERE td_time_range(time, td_time_add('2015-01-01', '-1d'), '2015-01-01')

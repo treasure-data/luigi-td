@@ -1,5 +1,5 @@
 from luigi_td.config import config
-from luigi_td.result import QueryResult
+from luigi_td.result_output import ResultOutput
 from luigi_td.target import DatabaseTarget
 from luigi_td.target import TableTarget
 
@@ -52,7 +52,7 @@ class DailyScheduled(Scheduled):
 class HourlyScheduled(Scheduled):
     scheduled_time = luigi.DateHourParameter()
 
-class Query(luigi.Task, QueryResult):
+class Query(luigi.Task, ResultOutput):
     type = 'hive'
     database = None
     query = None
@@ -73,7 +73,7 @@ class Query(luigi.Task, QueryResult):
         pass
 
     def query_body(self):
-        return file(self['query']).read()
+        return file(self.query).read()
 
     def output(self):
         return config.state_store.get_target(self)
@@ -89,7 +89,7 @@ class Query(luigi.Task, QueryResult):
         job = td.query(self.resolve('database'), 
                        query,
                        type = self.type,
-                       result_url = self.get_result_url())
+                       result_url = self.result_url)
         job._update_status()
         logger.info("{task}: td.job_url: {url}".format(task=self, url=job.url))
         # wait for the result
