@@ -44,7 +44,7 @@ All queries are defined as subclasses of ``luigi_td.Query``::
       type = 'presto'
       database = 'sample_datasets'
 
-      def query_body(self):
+      def query(self):
           return "SELECT count(1) cnt FROM www_access"
 
   if __name__ == '__main__':
@@ -87,7 +87,7 @@ You will often retrieve query results within Python for further processing.  For
       type = 'presto'
       database = 'sample_datasets'
 
-      def query_body(self):
+      def query(self):
           return "SELECT count(1) cnt FROM www_access"
 
   class MyQueryResult(luigi.Task):
@@ -177,7 +177,7 @@ The primitive way of using result outputs is to set ``result_url`` in your query
       # def result_url(self):
       #     return 's3://XXX/my_output_bucket'
 
-      def query_body(self):
+      def query(self):
           return "SELECT count(1) cnt FROM www_access"
 
 See `Job Result Output <http://docs.treasuredata.com/categories/result>`_ for the list of available result output targets.
@@ -192,7 +192,7 @@ Luigi-td provides several pre-defined output classes for convenience.  For examp
       aws_secret_access_key = '...'
       s3_path = 'my_output_bucket/luigi-td/file.csv'
 
-      def query_body(self):
+      def query(self):
           return "SELECT count(1) cnt FROM www_access"
 
 See "Result Output" for the list of available classes.
@@ -209,7 +209,7 @@ Luigi-td uses `Jinja2 <http://jinja.pocoo.org/>`_ as the default template engine
       # variables used in the template
       target_table = 'www_access'
 
-      def query_body(self):
+      def query(self):
           # query string is rendered as a Jinja2 template
           return "SELECT count(1) cnt FROM {{ task.target_table }}"
 
@@ -224,15 +224,15 @@ If you prefer defining variables explicitly, set a dictionaly ``variables``::
           'target_table': 'www_access'
       }
 
-      def query_body(self):
+      def query(self):
           return "SELECT count(1) cnt FROM {{ target_table }}"
 
-You might want to store your queries in separate files instead of writing them within the script.  Just set your query file name to ``query``.  This is the most common case how you will define your queries::
+You might want to store your queries in separate files instead of writing them within the script.  Just set your query file name to ``query_file``.  This is the most common case how you will define your queries::
 
   class MyTemplateFileQuery(luigi_td.Query):
       type = 'presto'
       database = 'sample_datasets'
-      query = 'templates/query.sql'
+      query_file = 'templates/query.sql'
       variables = {
           'target_table': 'www_access'
       }
@@ -250,7 +250,7 @@ Luigi supports passing parameters as command line options or constructor argumen
   class MyQueryWithParameters(luigi_td.Query):
       type = 'presto'
       database = 'sample_datasets'
-      query = 'templates/query_with_time_range.sql'
+      query_file = 'templates/query_with_time_range.sql'
 
       # parameters
       target_date = luigi.DateParameter()

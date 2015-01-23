@@ -3,6 +3,8 @@ from luigi_td.result_output import ResultOutput
 from luigi_td.target import DatabaseTarget
 from luigi_td.target import TableTarget
 
+import os
+import sys
 import time
 import urllib
 import luigi
@@ -55,7 +57,7 @@ class HourlyScheduled(Scheduled):
 class Query(luigi.Task, ResultOutput):
     type = 'hive'
     database = None
-    query = None
+    query_file = None
     variables = {}
 
     @property
@@ -69,21 +71,20 @@ class Query(luigi.Task, ResultOutput):
         else:
             return v
 
-    def query_header(self):
+    def query(self):
         pass
-
-    def query_body(self):
-        return file(self.query).read()
 
     def output(self):
         return config.state_store.get_target(self)
 
     def run(self):
         # build a query
-        header = self.query_header()
-        query = jinja2.Template(self.query_body()).render(task=self, **self.resolve('variables'))
-        if header:
-            query = header + "\n" + query
+        env = jinja2.Environment(loader=jinja2.PackageLoader(self.__module__, '.'))
+        if self.query_file:
+            template = env.get_template(self.query_file)
+        else:
+            template = jinja2.Template(self.query())
+        query = template.render(task=self, **self.resolve('variables'))
         # run the query
         td = config.get_client()
         job = td.query(self.resolve('database'), 
