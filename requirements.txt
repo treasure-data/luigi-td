@@ -1,2 +1,3 @@
 luigi>=1.0.19
-td-client>=0.1.0
+jinja2>=2.7.3
+td-client>=0.1.3
