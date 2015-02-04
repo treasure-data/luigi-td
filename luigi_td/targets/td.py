@@ -1,4 +1,4 @@
-from luigi_td.config import config
+from luigi_td.config import get_config
 
 import luigi
 import tdclient
@@ -38,7 +38,10 @@ class TableTarget(luigi.Target):
                 return False
         else:
             if t:
-                if [':'.join(c) for c in t.schema] != list(self.schema):
+                table_schema = [str(':'.join(c)) for c in t.schema]
+                if table_schema != list(self.schema):
+                    logger.error('Current schema: {0}'.format(table_schema))
+                    logger.error('Expected schema: {0}'.format(self.schema))
                     raise ValueError('table schema for {0}.{1} does not match'.format(self.database_name, self.table_name))
                 return True
             else:
