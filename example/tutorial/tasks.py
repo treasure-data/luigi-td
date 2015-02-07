@@ -3,97 +3,150 @@
 import luigi
 import luigi_td
 
+## Running Queries
+
 class MyQuery(luigi_td.Query):
     type = 'presto'
     database = 'sample_datasets'
 
     def query(self):
-        return "SELECT method, count(1) cnt FROM www_access group by 1"
+        return "SELECT count(1) cnt FROM www_access"
 
-class MyQueryResult(luigi.Task):
-    def requires(self):
-        return MyQuery()
+## Getting Results
 
-    def run(self):
-        result = self.input()
-        print '===================='
-        print "Job ID     : ", result.job_id
-        print "Status     : ", result.status
-        print "Result size:", result.size
-        print "Result     :"
-        print "\t".join([c[0] for c in result.columns])
-        print "----"
-        for row in result.cursor():
-            print "\t".join([str(c) for c in row])
-        print '===================='
-
-class MyQueryResultDump(luigi.Task):
-    def requires(self):
-        return MyQuery()
-
-    def output(self):
-        # this task creates "result.tsv"
-        return luigi.LocalTarget('result.tsv')
-
-    def run(self):
-        result = self.input()
-        # dump to "result.tsv"
-        result.dump('result.tsv')
-
-class MyQueryResultProcess(luigi.Task):
-    def requires(self):
-        return MyQueryResultDump()
-
-    def run(self):
-        result = self.input()
-        # open the result now
-        with result.open() as f:
-            print f.read()
-
-class MyQueryResultOutput(luigi_td.Query, luigi_td.S3ResultOutput):
+class MyQueryRun(luigi_td.Query):
     type = 'presto'
     database = 'sample_datasets'
-
-    aws_access_key_id = '...'
-    aws_secret_access_key = '...'
-    s3_path = 'my_output_bucket/luigi-td/file.csv'
 
     def query(self):
         return "SELECT count(1) cnt FROM www_access"
 
-class MyTemplateQuery(luigi_td.Query):
+    def run(self):
+        result = self.run_query(self.query())
+        print '===================='
+        print "Job ID     :", result.job_id
+        print "Result size:", result.size
+        print "Result     :"
+        print "\t".join([c[0] for c in result.description])
+        print "----"
+        for row in result:
+            print "\t".join([str(c) for c in row])
+        print '===================='
+
+class MyQuerySave(luigi_td.Query):
     type = 'presto'
     database = 'sample_datasets'
+
+    def query(self):
+        return "SELECT count(1) cnt FROM www_access"
+
+    def output(self):
+        return luigi.LocalTarget('MyQuerySave.csv')
+
+    def run(self):
+        result = self.run_query(self.query())
+        result.to_csv(self.output().path)
+
+## Building Pipelines
+
+class MyQueryStep1(luigi_td.Query):
+    type = 'presto'
+    database = 'sample_datasets'
+
+    def query(self):
+        return "SELECT count(1) cnt FROM www_access"
+
+    def output(self):
+        # the state of a query is saved as ResultTarget
+        return luigi_td.ResultTarget('MyQueryStep1.job')
+
+class MyQueryStep2(luigi.Task):
+    def requires(self):
+        return MyQueryStep1()
+
+    def output(self):
+        return luigi.LocalTarget('MyQueryStep2.csv')
+
+    def run(self):
+        target = self.input()
+        # retrieve the result and save it as a local CSV file
+        target.result.to_csv(self.output().path)
+
+class MyQueryStep3(luigi.Task):
+    def requires(self):
+        return MyQueryStep2()
+
+    def output(self):
+        return luigi.LocalTarget('MyQueryStep3.csv')
+
+    def run(self):
+        with self.input().open() as f:
+            # process the result here
+            print f.read()
+        with self.output().open('w') as f:
+            # crate the final output
+            f.write('done')
+
+## Templating Queries
+
+class MyQueryFromTemplate(luigi_td.Query):
+    type = 'presto'
+    database = 'sample_datasets'
+    source = 'templates/query_with_status_code.sql'
 
     # variables used in the template
-    target_table = 'www_access'
+    status_code = 200
 
-    def query(self):
-        # query string is rendered as a Jinja2 template
-        return "SELECT count(1) cnt FROM {{ task.target_table }}"
-
-class MyTemplateQueryWithVariables(luigi_td.Query):
+class MyQueryWithVariables(luigi_td.Query):
     type = 'presto'
     database = 'sample_datasets'
+    source = 'templates/query_with_variables.sql'
+
+    # define variables
     variables = {
-        'target_table': 'www_access'
+        'status_code': 200,
     }
 
-    def query(self):
-        return "SELECT count(1) cnt FROM {{ target_table }}"
+    # use property for dynamic variables
+    # @property
+    # def variables(self):
+    #     return {
+    #         'status_code': 200,
+    #     }
 
-class MyTemplateFileQuery(luigi_td.Query):
-    type = 'presto'
-    database = 'sample_datasets'
-    query_file = 'templates/query.sql'
+## Passing Parameters
 
 class MyQueryWithParameters(luigi_td.Query):
     type = 'presto'
     database = 'sample_datasets'
-    query_file = 'templates/query_with_time_range.sql'
+    source = 'templates/query_with_time_range.sql'
 
     # parameters
-    target_date = luigi.DateParameter()
+    year = luigi.IntParameter()
+
+    def output(self):
+        return luigi_td.ResultTarget('MyQueryWithParameters-{0}.job'.format(self.year))
+
+class MyQueryAggregator(luigi.Task):
+    def requires(self):
+        # create a list of tasks with different parameters
+        return [
+            MyQueryWithParameters(2010),
+            MyQueryWithParameters(2011),
+            MyQueryWithParameters(2012),
+            MyQueryWithParameters(2013),
+        ]
+
+    def output(self):
+        return luigi.LocalTarget('MyQueryAggretator.txt')
+
+    def run(self):
+        with self.output().open('w') as f:
+            # repeat for each ResultTarget
+            for target in self.input():
+                # output results into a single file
+                for row in target.result:
+                    f.write(str(row) + "\n")
 
 if __name__ == '__main__':
     luigi.run()

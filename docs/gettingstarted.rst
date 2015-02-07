@@ -1,44 +1,47 @@
-===============
-Getting Started
-===============
+=============================
+Getting Started with Luigi-TD
+=============================
+
+This tutorial will walk you through installing and configuring Luigi-TD, as well how to use it to write your first data pipiline.
+
+This tutorial assumes you are familiar with Python and that you have registered for a `Treasure Data <http://www.treasuredata.com>`_ account.  You'll need retrieve your API key from the web-based console.
 
 Installation
 ============
 
-Assuming you have already installed Python, you can install Luigi-td by ``pip``::
+You can use ``pip`` to install the latest released version of Luigi-TD::
 
   $ pip install luigi-td
 
 Configuration
 =============
 
-Set ``TD_API_KEY`` to your API key::
+You can set your API key as an environment variable ``TD_API_KEY``::
 
-  $ export TD_API_KEY="1/1c410625..."
+  $ export TD_API_KEY=1/1c410625...
 
-If you have a configuration file for Luigi (``/etc/luigi/client.cfg`` by default), you can add a ``[td]`` section in it::
+Alternatively, you can use the Luigi configuration file (``/etc/luigi/client.cfg`` by default)::
 
   # configuration for Luigi
   [core]
   error-email: you@example.com
 
-  # configuration for Luigi-td
+  # configuration for Luigi-TD
   [td]
-  api-key: 1/1c410625...
+  apikey: 1/1c410625...
+  endpoint: https://api.treasuredata.com
 
-Writing Queries
+Running Queries
 ===============
 
 .. note::
 
-  The script in this tutorial is available online at http://github.com/k24d/luigi-td/example/tutorial/tutorial.py
+  The full scripts in this tutorial are available online at http://github.com/k24d/luigi-td/example/tutorial/tasks.py
 
-All queries are defined as subclasses of ``luigi_td.Query``::
-
-  # tutorial.py
+A query is defined as a subclass of ``Query``::
 
   import luigi
-  import luigi_td
+  import luigi_td as td
 
   class MyQuery(luigi_td.Query):
       type = 'presto'
@@ -52,8 +55,10 @@ All queries are defined as subclasses of ``luigi_td.Query``::
 
 You can submit your query as a normal Python script as follows::
 
-  $ python tutorial.py MyQuery --local-scheduler
+  $ python tasks.py MyQuery --local-scheduler
   DEBUG: Checking if MyQuery() is complete
+  /usr/local/lib/python2.7/site-packages/luigi/task.py:433: UserWarning: Task MyQuery() without outputs has no custom complete() method
+    warnings.warn("Task %r without outputs has no custom complete() method" % self)
   INFO: Scheduled MyQuery() (PENDING)
   INFO: Done scheduling tasks
   INFO: Running Worker with 1 processes
@@ -61,64 +66,45 @@ You can submit your query as a normal Python script as follows::
   DEBUG: Pending tasks: 1
   INFO: [pid 1234] Worker Worker(salt=123456789, host=...) running   MyQuery()
   INFO: MyQuery(): td.job_url: https://console.treasuredata.com/jobs/19958264
-  INFO: MyQuery(): td.job_result: id=19958264 status=success elapsed=12.34
+  INFO: MyQuery(): td.job_result: id=19958264 status=success
   INFO: [pid 1234] Worker Worker(salt=123456789, host=...) done      MyQuery()
 
-Notice that there are INFO messages "td.job_url" and "td.job_result" in the log.  The result of your query is accessible either by opening the URL or by running ``td job:show`` as follows::
+You will find INFO messages "td.job_url" and "td.job_result" in the log.  The result of your query is accessible by opening the URL with your favorite browser.
 
-  $ td job:show 19958264
-  JobID       : 19958264
-  Status      : success
-  ...
-  Result      :
-  +------+
-  | cnt  |
-  +------+
-  | 5000 |
-  +------+
-  1 row in set
+Getting Results
+===============
 
-Getting the Result
-==================
+You will want to retrieve query results within Python for further processing.  A straight forward way of doing that is to overwrite the ``run`` method and call ``run_query`` in it::
 
-You will often retrieve query results within Python for further processing.  Fortunately, you can directly access to the result object by calling ``self.input()`` from another Luigi task::
-
-  class MyQuery(luigi_td.Query):
+  class MyQueryRun(luigi_td.Query):
       type = 'presto'
       database = 'sample_datasets'
 
       def query(self):
           return "SELECT count(1) cnt FROM www_access"
 
-  class MyQueryResult(luigi.Task):
-      def requires(self):
-          return MyQuery()
-
       def run(self):
-          result = self.input()
+          result = self.run_query(self.query())
           print '===================='
-          print "Job ID     : ", result.job_id
-          print "Status     : ", result.status
+          print "Job ID     :", result.job_id
+          print "Result size:", result.size
           print "Result     :"
-          print "\t".join([c[0] for c in result.columns])
+          print "\t".join([c[0] for c in result.description])
           print "----"
-          for row in result.cursor():
+          for row in result:
               print "\t".join([str(c) for c in row])
           print '===================='
 
-As you can see in this example, our second task ``MyQueryResult`` requires ``MyQuery``, which is automatically executed by Luigi's scheduler.  Thus, two tasks will be performed sequencially just by running ``MyQueryResult``::
+The result of ``run_query`` is an instance of ``ResultProxy`` and you can fetch rows immediately::
 
-  $ python tutorial.py MyQueryResult --local-scheduler
+  $ python tasks.py MyQueryRun --local-scheduler
   ...
-  INFO: [pid 1234] Worker Worker(salt=123456789, host=...) running   MyQuery()
+  INFO: [pid 1234] Worker Worker(salt=123456789, host=...) running   MyQueryRun()
   INFO: MyQuery(): td.job_url: https://console.treasuredata.com/jobs/19958264
-  INFO: MyQuery(): td.job_result: id=19958264 status=success elapsed=12.34
-  INFO: [pid 1234] Worker Worker(salt=123456789, host=...) done      MyQuery()
-  ...
-  INFO: [pid 1234] Worker Worker(salt=123456789, host=...) running   MyQueryResult()
+  INFO: MyQuery(): td.job_result: id=19958264 status=success
   ====================
-  Job ID     :  19958264
-  Status     :  success
+  Job ID     : 19958264
+  Result size: 24
   Result     :
   cnt
   ----
@@ -126,151 +112,225 @@ As you can see in this example, our second task ``MyQueryResult`` requires ``MyQ
   ====================
   INFO: [pid 1234] Worker Worker(salt=123456789, host=...) done      MyQueryResult()
 
-``MyQueryResult`` is executed when the query defined in ``MyQuery`` is completed.  You can start downloading the result of your query as soon as ``MyQueryResult.run()`` is called.  Note that ``MyQueryResult`` won't be executed if ``MyQuery`` got interrupted, either by a user error (like a syntax error) or by a run-time error (like network failure).  See (TODO) for details.
+In practice, however, you should save the result before processing it when building a data pipeline with Luigi.  As you are working with big data, running a query could take a long time and retrieving the result over network might be very slow.  You should create a local copy of your result and work with it.
 
-Processing the Result
-=====================
+The ``output`` method can be defined in the same way as you write regular Luigi tasks.  For example, you can use ``luigi.LocalTarget``, combined with ``to_csv``, to save the result to a local file::
 
-At the time our second query ``MyQueryResult`` is called, the query result has not been downloaded yet.  Unless it is adequately small, you should save the result into a local file before processing so you can avoid downloading it twice on processing errors.  That's why we need another step in our data workflow.
+  class MyQuerySave(luigi_td.Query):
+      type = 'presto'
+      database = 'sample_datasets'
 
-Suppose you had a bug in your data processing code.  If you didn't save the result, you would run the same query again and again until you fixed the bug.  Instead, you can use the ``dump()`` method, combined with ``luigi.LocalTarget``, to save query results to local files and let Luigi to skip running the same query::
-
-  class MyQueryResultDump(luigi.Task):
-      def requires(self):
-          return MyQuery()
+      def query(self):
+          return "SELECT count(1) cnt FROM www_access"
 
       def output(self):
-          # this task creates "result.tsv"
-          return luigi.LocalTarget('result.tsv')
+          return luigi.LocalTarget('MyQuerySave.csv')
 
       def run(self):
-          result = self.input()
-          # dump to "result.tsv"
-          result.dump('result.tsv')
+          result = self.run_query(self.query())
+          result.to_csv(self.output().path)
 
-  class MyQueryResultProcess(luigi.Task):
+Building Pipelines
+==================
+
+A "data pipeline" is a series of tasks, passing the result of one task to another.
+
+.. image:: _static/images/pipeline.png
+  :width: 500px
+
+It is always recommended for you to define queries as pipelines.  You can split your query into 3 steps:
+
+1. Running a query
+2. Retrieving the result
+3. Processing the result
+
+Each step could consume considerable resources (i.e., cpu time, network bandwidth, etc.) and you should avoid repeating the same process.  If you had a bug in step 3, and you didn't save the result in step 2, you would run the same query and download the result again and again until you fixed the bug successfully.
+
+Unless your query is adequately small, you should save "the state of a job" without waiting for the result and then run a different task that retrieves the result.  This is the default behavior of ``Query`` and you can use ``ResultTarget``, instead of ``LocalTarget``, to save the state::
+
+  class MyQueryStep1(luigi_td.Query):
+      type = 'presto'
+      database = 'sample_datasets'
+
+      def query(self):
+          return "SELECT count(1) cnt FROM www_access"
+
+      def output(self):
+          # the state of a query is saved as ResultTarget
+          return luigi_td.ResultTarget('MyQueryStep1.job')
+
+  class MyQueryStep2(luigi.Task):
       def requires(self):
-          return MyQueryResultDump()
+          return MyQueryStep1()
+
+      def output(self):
+          return luigi.LocalTarget('MyQueryStep2.csv')
 
       def run(self):
           result = self.input()
-          # open the result now
-          with result.open() as f:
+          # retrieve the result and save it as a local CSV file
+          result.to_csv(self.output().path)
+
+  class MyQueryStep3(luigi.Task):
+      def requires(self):
+          return MyQueryStep2()
+
+      def output(self):
+          return luigi.LocalTarget('MyQueryStep3.csv')
+
+      def run(self):
+          with self.input().open() as f:
+              # process the result here
               print f.read()
+          with self.output().open('w') as f:
+              # crate the final output
+              f.write('done')
 
-Outputting the Result
-=====================
+As you see in this example, the preceding tasks are required by the following tasks.  Luigi's scheduler resolves the dependency and all tasks are executed one after another just by running the last one::
 
-You might want to send query results to cloud services without saving them to your local machine.  Luigi-td supports various output classes that transfer the results to remote servers, either directly from Treasure Data or indirectly through an intermediate server.
+  $ python tasks.py MyQueryStep3 --local-scheduler
+  ...
+  INFO: [pid 1234] Worker Worker(salt=123456789, host=...) running   MyQueryStep1()
+  INFO: MyQuery(): td.job_url: https://console.treasuredata.com/jobs/19958264
+  INFO: MyQuery(): td.job_result: id=19958264 status=success
+  INFO: [pid 1234] Worker Worker(salt=123456789, host=...) done      MyQueryStep1()
+  ...
+  INFO: [pid 1234] Worker Worker(salt=123456789, host=...) running   MyQueryStep2()
+  INFO: [pid 1234] Worker Worker(salt=123456789, host=...) done      MyQueryStep2()
+  ...
+  INFO: [pid 1234] Worker Worker(salt=123456789, host=...) running   MyQueryStep3()
+  cnt
+  5000
 
-The primitive way of using result outputs is to set ``result_url`` in your query class::
+  INFO: [pid 1234] Worker Worker(salt=123456789, host=...) done      MyQueryStep3()
 
-  class MyOutputQuery(luigi_td.Query):
-      type = 'presto'
-      database = 'sample_datasets'
-
-      # the output goes to S3
-      result_url = 's3://XXX/my_output_bucket'
-
-      # alternatively, you can define a property
-      # @property
-      # def result_url(self):
-      #     return 's3://XXX/my_output_bucket'
-
-      def query(self):
-          return "SELECT count(1) cnt FROM www_access"
-
-See `Job Result Output <http://docs.treasuredata.com/categories/result>`_ for the list of available result output targets.
-
-Luigi-td provides several pre-defined output classes for convenience.  For example, you can mixin ``luigi_td.S3ResultOutput`` to your query and get the result output to Amazon S3::
-
-  class MyQueryResultOutput(luigi_td.Query, luigi_td.S3ResultOutput):
-      type = 'presto'
-      database = 'sample_datasets'
-
-      aws_access_key_id = '...'
-      aws_secret_access_key = '...'
-      s3_path = 'my_output_bucket/luigi-td/file.csv'
-
-      def query(self):
-          return "SELECT count(1) cnt FROM www_access"
-
-See "Result Output" for the list of available classes.
+This looks complex at the first glance, but you will eventually find it being a natural way of building data pipilines with Luigi.  Every single task should define an explicit ``output`` method to avoid repeated execution of the same task.
 
 Templating Queries
 ==================
 
-Luigi-td uses `Jinja2 <http://jinja.pocoo.org/>`_ as the default template engine.  Query strings are rendered as Jinja2 templates at run time::
+Luigi-TD uses `Jinja2 <http://jinja.pocoo.org/>`_ as the default template engine.  You can write your query in an external file and set ``source`` to the file::
 
-  class MyTemplateQuery(luigi_td.Query):
+  class MyQueryFromTemplate(luigi_td.Query):
       type = 'presto'
       database = 'sample_datasets'
+      source = 'templates/query_with_status_code.sql'
 
       # variables used in the template
-      target_table = 'www_access'
-
-      def query(self):
-          # query string is rendered as a Jinja2 template
-          return "SELECT count(1) cnt FROM {{ task.target_table }}"
-
-As you can see in this example, a single variable ``task`` is available in templates.  The value of ``task`` is the instance of your query class.  As a result, the template ``{{ task.target_table }}`` will be replaced by ``www_access`` at run time.  You can set any variables or methods in your class and access to them through ``task``.
-
-If you prefer defining variables explicitly, set a dictionaly ``variables``::
-
-  class MyTemplateQueryWithVariables(luigi_td.Query):
-      type = 'presto'
-      database = 'sample_datasets'
-      variables = {
-          'target_table': 'www_access'
-      }
-
-      def query(self):
-          return "SELECT count(1) cnt FROM {{ target_table }}"
-
-You might want to store your queries in separate files instead of writing them within the script.  Just set your query file name to ``query_file``.  This is the most common case how you will define your queries::
-
-  class MyTemplateFileQuery(luigi_td.Query):
-      type = 'presto'
-      database = 'sample_datasets'
-      query_file = 'templates/query.sql'
-      variables = {
-          'target_table': 'www_access'
-      }
+      status_code = 200
 
 ::
 
-  -- templates/query.sql
-  SELECT count(1) cnt FROM {{ target_table }}
+  -- templates/query_with_status_code.sql
+  SELECT count(1) cnt
+  FROM   www_access
+  WHERE  code = {{ task.status_code }}
+
+As you see in this example, a single variable ``task`` is available in templates.  The value of ``task`` is the instance of your query.  As a result, ``{{ task.status_code }}`` is replaced by ``200`` at run time.  You can define any variables or methods in your class and access to them through ``task``.
+
+If you prefer setting variables explicitly, use ``variables`` instead::
+
+  class MyQueryWithVariables(luigi_td.Query):
+      type = 'presto'
+      database = 'sample_datasets'
+      source = 'templates/query_with_variables.sql'
+
+      # define variables
+      variables = {
+          'status_code': 200,
+      }
+
+      # use property for dynamic variables
+      # @property
+      # def variables(self):
+      #     return {
+      #         'status_code': 200,
+      #     }
+
+::
+
+  -- templates/query_with_variables.sql
+  SELECT count(1) cnt
+  FROM   www_access
+  WHERE  code = {{ status_code }}
 
 Passing Parameters
 ==================
 
-Luigi supports passing parameters as command line options or constructor arguments.  Parameters can be used to build queries dynamically::
+Luigi supports passing parameters as command line options or constructor arguments.  This is convenient for building queries dynamically::
 
   class MyQueryWithParameters(luigi_td.Query):
       type = 'presto'
       database = 'sample_datasets'
-      query_file = 'templates/query_with_time_range.sql'
+      source = 'templates/query_with_time_range.sql'
 
       # parameters
-      target_date = luigi.DateParameter()
+      year = luigi.IntParameter()
 
 ::
 
   -- templates/query_with_time_range.sql
-  SELECT count(1) cnt
-  FROM www_access
-  WHERE td_time_range(time, td_time_add('{{ task.target_date }}', '-1d'), '{{ task.target_date }}')
+  SELECT
+    td_time_format(time, 'yyyy-MM') month,
+    count(1) cnt
+  FROM
+    nasdaq
+  WHERE
+    td_time_range(time, '{{ task.year }}-01-01', '{{ task.year + 1 }}-01-01')
+  GROUP BY
+    td_time_format(time, 'yyyy-MM')
 
-You can pass parameters as command line options::
+In this case, a parameter ``year`` is defined as an integer.  You can set it by a command line option as follows::
 
-  $ python tutorial.py MyQueryWithParameters --local-scheduler --target-date 2015-01-01
-  INFO: Scheduled MyQueryWithParameters(target_date=2015-01-01) (PENDING)
+  $ python tasks.py MyQueryWithParameters --local-scheduler --year 2010
+  INFO: Scheduled MyQueryWithParameters(year=2010) (PENDING)
   ...
 
-The query template is rendered using parameters, and you will get the following query as a result::
+The query template is rendered using parameters.  You will get the following query as a result::
 
   -- templates/query_with_time_range.sql
-  SELECT count(1) cnt
-  FROM www_access
-  WHERE td_time_range(time, td_time_add('2015-01-01', '-1d'), '2015-01-01')
+  SELECT
+    td_time_format(time, 'yyyy-MM') month,
+    count(1) cnt
+  FROM
+    nasdaq
+  WHERE
+    td_time_range(time, '2010-01-01', '2011-01-01')
+  GROUP BY
+    td_time_format(time, 'yyyy-MM')
+
+Parameters are also useful to create unique names in ``output``.  You will often run the same query repeatedly with different paramters.  You have to create different names for all query submissions::
+
+  class MyQueryWithParameters(luigi_td.Query):
+      type = 'presto'
+      database = 'sample_datasets'
+      source = 'templates/query_with_time_range.sql'
+
+      # parameters
+      year = luigi.IntParameter()
+
+      def output(self):
+          return luigi_td.ResultTarget('MyQueryWithParameters-{0}.job'.format(self.year))
+
+Now you are ready to automate the process of running multiple queries with different parameters.  You can set up scheduled invocation for your tasks, or write an aggregation task that invokes your parameterized tasks as much as you want::
+
+  class MyQueryAggregator(luigi.Task):
+      def requires(self):
+          # create a list of tasks with different parameters
+          return [
+              MyQueryWithParameters(2010),
+              MyQueryWithParameters(2011),
+              MyQueryWithParameters(2012),
+              MyQueryWithParameters(2013),
+          ]
+
+      def output(self):
+          return luigi.LocalTarget('MyQueryAggretator.txt')
+
+      def run(self):
+          with self.output().open('w') as f:
+              # repeat for each ResultTarget
+              for target in self.input():
+                  # output results into a single file
+                  for row in target.result:
+                      f.write(str(row) + "\n")
