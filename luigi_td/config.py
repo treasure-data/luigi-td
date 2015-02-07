@@ -7,6 +7,8 @@ logger = logging.getLogger('luigi-interface')
 
 DEFAULT_ENDPOINT = 'https://api.treasuredata.com/'
 
+__all__ = ['Config', 'get_config']
+
 class Config(object):
     def __init__(self, apikey, endpoint=DEFAULT_ENDPOINT):
         self.apikey = apikey
@@ -16,6 +18,15 @@ class Config(object):
         return tdclient.Client(self.apikey, endpoint=self.endpoint)
 
 class ConfigLoader(object):
+    _instance = None
+
+    @classmethod
+    def instance(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = cls(*args, **kwargs)
+            cls._instance.load_default()
+        return cls._instance
+
     def __init__(self):
         self.config = None
 
@@ -28,8 +39,5 @@ class ConfigLoader(object):
         endpoint = luigi_config.get('td', 'endpoint', DEFAULT_ENDPOINT)
         self.config = Config(apikey, endpoint=endpoint)
 
-default_loader = ConfigLoader()
-default_loader.load_default()
-
 def get_config():
-    return default_loader.get_config()
+    return ConfigLoader.instance().get_config()
