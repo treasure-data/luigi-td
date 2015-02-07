@@ -1,4 +1,6 @@
 from luigi_td.config import get_config
+from luigi_td.client import ResultProxy
+from luigi_td.targets.result import ResultTarget
 from luigi_td.targets.td import DatabaseTarget
 from luigi_td.targets.td import TableTarget
 
@@ -57,33 +59,31 @@ class HourlyScheduled(Scheduled):
 
 class Query(luigi.Task):
     config = get_config()
+    debug = False
     type = 'hive'
     database = None
-    query_file = None
+    source = None
     variables = {}
 
     def query(self):
-        pass
+        return NotImplemented()
 
-    def _load_query(self):
-        if self.query_file:
-            # query file
-            env = jinja2.Environment(loader=jinja2.PackageLoader(self.__module__, '.'))
-            template = env.get_template(self.query_file)
-        else:
-            # query string
-            template = jinja2.Template(self.query())
+    def load_query(self, source):
+        env = jinja2.Environment(loader=jinja2.PackageLoader(self.__module__, '.'))
+        template = env.get_template(self.source)
         return template.render(task=self, **self.variables)
 
-    def _run_query(self, query):
+    def run_query(self, query):
         result = self.output()
+        result_url = None
+        if isinstance(result, ResultTarget):
+            result_url = result.get_result_url()
         td = self.config.get_client()
         job = td.query(self.database, 
                        query,
                        type = self.type,
-                       result_url = result.get_result_url() if result else None)
+                       result_url = result_url)
         job._update_status()
-        result.save_state({'job_id': job.job_id, 'status': job.status()})
         logger.info("{task}: td.job_url: {url}".format(task=self, url=job.url))
 
         # wait for the result
@@ -93,23 +93,37 @@ class Query(luigi.Task):
         except:
             # kill query on exceptions
             job.kill()
+            raise
         job._update_status()
-        result.save_state({'job_id': job.job_id, 'status': job.status()})
-        logger.info("{task}: td.job_result: id={job_id} status={status} cpu_time={cpu_time}".format(
+
+        logger.info("{task}: td.job_result: id={job_id} status={status}".format(
             task = self,
             job_id = job.job_id,
             status = job.status(),
-            cpu_time = job._cpu_time,
         ))
-        return job
 
-    def run(self):
-        query = self._load_query()
-        job = self._run_query(query)
-
-        # output
         if not job.success():
             stderr = job._debug['stderr']
             if stderr:
                 logger.error(stderr)
             raise RuntimeError("job {0} {1}\n\nOutput:\n{2}".format(job.job_id, job.status(), job._debug['cmdout']))
+
+        return ResultProxy(job)
+
+    def run(self):
+        if hasattr(self, 'query_file'):
+            self.source = self.query_file
+        query = self.load_query(self.source) if self.source else self.query()
+        result = self.run_query(query)
+        target = self.output()
+        if target and isinstance(target, ResultTarget):
+            target.save_state(result)
+
+        if self.debug:
+            import pandas as pd
+            TERMINAL_WIDTH = 120
+            pd.options.display.width = TERMINAL_WIDTH
+            print '-' * TERMINAL_WIDTH
+            print 'Query result:'
+            print result.to_dataframe()
+            print '-' * TERMINAL_WIDTH
