@@ -57,7 +57,7 @@ class MyQueryStep1(luigi_td.Query):
         return "SELECT count(1) cnt FROM www_access"
 
     def output(self):
-        # the state of a query is saved as ResultTarget
+        # the query state is stored by ResultTarget
         return luigi_td.ResultTarget('MyQueryStep1.job')
 
 class MyQueryStep2(luigi.Task):
@@ -107,7 +107,7 @@ class MyQueryWithVariables(luigi_td.Query):
         'status_code': 200,
     }
 
-    # use property for dynamic variables
+    # or use property for dynamic variables
     # @property
     # def variables(self):
     #     return {
@@ -125,6 +125,7 @@ class MyQueryWithParameters(luigi_td.Query):
     year = luigi.IntParameter()
 
     def output(self):
+        # create a unique name for this output using parameters
         return luigi_td.ResultTarget('MyQueryWithParameters-{0}.job'.format(self.year))
 
 class MyQueryAggregator(luigi.Task):

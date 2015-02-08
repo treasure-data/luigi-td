@@ -3,11 +3,11 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-luigi-td documentation
+Luigi-TD documentation
 ======================
 
-luigi-td integrates `Treasure Data <http://www.treasuredta.com>`_ into
-`Luigi <http://luigi.readthedocs.org/en/latest/>`_ for your data workflow management.
+Luigi-TD integrates `Treasure Data <http://www.treasuredta.com>`_
+into `Luigi <http://luigi.readthedocs.org/en/latest/>`_ for your data workflow management.
 
 Contents:
 
