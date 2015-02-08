@@ -1,4 +1,4 @@
-from ..test_helper import TestEnv, MockJob
+from ..test_helper import TestConfig
 from s3 import S3ResultTarget
 
 from unittest import TestCase
@@ -7,17 +7,17 @@ from nose.tools import eq_, raises
 import urllib
 import urlparse
 
-env = TestEnv()
+test_config = TestConfig()
 
 class TableauServerResultTargetTestCase(TestCase):
     def setUp(self):
-        env.setUp()
+        test_config.setUp()
 
     def tearDown(self):
-        env.tearDown()
+        test_config.tearDown()
 
     def test_default(self):
-        target = S3ResultTarget(env.get_tmp_path('result.job'))
+        target = S3ResultTarget(test_config.get_tmp_path('result.job'))
         target.aws_access_key_id = 'AWS_ACCESS_KEY_ID'
         target.aws_secret_access_key = 'AWS_SECRET_ACCESS_KEY'
         target.bucket = 'test-bucket'

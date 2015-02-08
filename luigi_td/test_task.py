@@ -1,31 +1,26 @@
+from test_helper import TestConfig
 from task import Query
 from targets import ResultTarget
-from test_helper import TestEnv, MockClient
 
 from unittest import TestCase
 from nose.tools import eq_, raises
 
 import luigi
 
-env = TestEnv()
-
-class TestConfig(object):
-    def __init__(self, spec):
-        self.query_spec = spec
-
-    def get_client(self):
-        return MockClient(self.query_spec)
-
-success_test_config = TestConfig({
-    'job_id': 1,
-    'status': 'success',
-    'size': 20,
-    'description': [['cnt', 'int']],
-    'rows': [[5000]],
-})
+test_config = TestConfig(
+    jobs = [
+        {
+            'job_id': 1,
+            'status': 'success',
+            'size': 20,
+            'description': [['cnt', 'int']],
+            'rows': [[5000]],
+        }
+    ]
+)
 
 class TestQuery(Query):
-    config = success_test_config
+    config = test_config
     type = 'hive'
     database = 'sample_datasets'
     def query(self):
@@ -33,10 +28,10 @@ class TestQuery(Query):
 
 class QueryTestCase(TestCase):
     def setUp(self):
-        env.setUp()
+        test_config.setUp()
 
     def tearDown(self):
-        env.tearDown()
+        test_config.tearDown()
 
     def test_simple(self):
         class SimpleTestQuery(TestQuery):
@@ -47,18 +42,18 @@ class QueryTestCase(TestCase):
     def test_with_output(self):
         class OutputTestQuery(TestQuery):
             def output(self):
-                return ResultTarget(env.get_tmp_path('{0}.job'.format(self)))
+                return ResultTarget(test_config.get_tmp_path('{0}.job'.format(self)))
         task = OutputTestQuery()
         task.run()
 
     def test_with_dependency(self):
         class DependencyTestQuery(TestQuery):
             def output(self):
-                return ResultTarget(env.get_tmp_path('{0}.job'.format(self)))
+                return ResultTarget(test_config.get_tmp_path('{0}.job'.format(self)))
         class DependencyTestResult(luigi.Task):
             def requires(self):
                 return DependencyTestQuery()
             def output(self):
-                return LocalTarget(env.get_tmp_path('{0}.csv'.format(self)))
+                return LocalTarget(test_config.get_tmp_path('{0}.csv'.format(self)))
         task = DependencyTestResult()
         task.run()

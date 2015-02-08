@@ -1,4 +1,4 @@
-from ..test_helper import TestEnv, MockJob
+from ..test_helper import TestConfig
 from tableau import TableauServerResultTarget
 from tableau import TableauOnlineResultTarget
 
@@ -8,7 +8,7 @@ from nose.tools import eq_, raises
 import urllib
 import urlparse
 
-env = TestEnv()
+test_config = TestConfig()
 
 class TestTableauServerResultTarget(TableauServerResultTarget):
     server = 'tableau.example.com'
@@ -17,13 +17,13 @@ class TestTableauServerResultTarget(TableauServerResultTarget):
 
 class TableauServerResultTargetTestCase(TestCase):
     def setUp(self):
-        env.setUp()
+        test_config.setUp()
 
     def tearDown(self):
-        env.tearDown()
+        test_config.tearDown()
 
     def test_default(self):
-        target = TestTableauServerResultTarget(env.get_tmp_path('result.job'))
+        target = TestTableauServerResultTarget(test_config.get_tmp_path('result.job'))
         target.datasource = 'test-datasource'
         url = urlparse.urlparse(target.get_result_url())
         params = urlparse.parse_qs(url.query)
@@ -40,7 +40,7 @@ class TableauServerResultTargetTestCase(TestCase):
         eq_(params.get('mode'), ['replace'])
 
     def test_options(self):
-        target = TestTableauServerResultTarget(env.get_tmp_path('result.job'))
+        target = TestTableauServerResultTarget(test_config.get_tmp_path('result.job'))
         target.version = '8.3'
         target.site = 'test-site'
         target.project = 'test-project'
@@ -55,13 +55,13 @@ class TableauServerResultTargetTestCase(TestCase):
 
 class TableauOnlineResultTargetTestCase(TestCase):
     def setUp(self):
-        env.setUp()
+        test_config.setUp()
 
     def tearDown(self):
-        env.tearDown()
+        test_config.tearDown()
 
     def test_default(self):
-        target = TableauOnlineResultTarget(env.get_tmp_path('result.job'))
+        target = TableauOnlineResultTarget(test_config.get_tmp_path('result.job'))
         target.username = 'test@example.com'
         target.password = 'test-password'
         target.datasource = 'test-datasource'
