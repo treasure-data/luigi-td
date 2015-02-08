@@ -48,15 +48,6 @@ class CreateTable(luigi.Task):
 
 # query
 
-class Scheduled(object):
-    scheduled_time = luigi.Parameter()
-
-class DailyScheduled(Scheduled):
-    scheduled_time = luigi.DateParameter()
-
-class HourlyScheduled(Scheduled):
-    scheduled_time = luigi.DateHourParameter()
-
 class Query(luigi.Task):
     config = get_config()
     debug = False
