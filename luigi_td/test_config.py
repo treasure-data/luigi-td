@@ -24,7 +24,8 @@ class ConfigLoaderTestCase(TestCase):
     def setUp(self):
         self.environ = os.environ.copy()
         # clear environment variables
-        del os.environ['TD_API_KEY']
+        if 'TD_API_KEY' in os.environ:
+            del os.environ['TD_API_KEY']
 
     def tearDown(self):
         os.environ.clear()
