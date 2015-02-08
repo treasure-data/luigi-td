@@ -14,24 +14,28 @@ import jinja2
 import logging
 logger = logging.getLogger('luigi-interface')
 
-class CreateDatabase(luigi.Task):
+__all__ = ['DatabaseTask', 'TableTask', 'Query']
+
+class DatabaseTask(luigi.Task):
     config = get_config()
     database_name = luigi.Parameter()
+    action = luigi.Parameter(default='create')
 
     def output(self):
         return DatabaseTarget(self.database_name)
 
     def run(self):
-        td = self.config.get_client()
-        logger.debug('Creating database: {0}'.format(self.database_name))
-        td.create_database(self.database_name)
+        client = self.config.get_client()
+        logger.debug('{0}: creating database: {1}'.format(self, self.database_name))
+        client.create_database(self.database_name)
 
-class CreateTable(luigi.Task):
+class TableTask(luigi.Task):
     config = get_config()
     database_name = luigi.Parameter()
     table_name = luigi.Parameter()
-    schema = luigi.Parameter(is_list=True, significant=False)
-    empty = luigi.BooleanParameter(significant=False)
+    action = luigi.Parameter(default='create')
+    schema = luigi.Parameter(is_list=True, default=[], significant=False)
+    empty = luigi.BooleanParameter(default=False, significant=False)
 
     def requires(self):
         return CreateDatabase(self.database_name)
@@ -40,11 +44,12 @@ class CreateTable(luigi.Task):
         return TableTarget(self.database_name, self.table_name, self.schema, empty=self.empty)
 
     def run(self):
-        td = self.config.get_client()
-        logger.debug('Creating table: {0}.{1}'.format(self.database_name, self.table_name))
-        td.create_log_table(self.database_name, self.table_name)
-        logger.debug('Updating schema for {0}.{1}'.format(self.database_name, self.table_name))
-        td.update_schema(self.database_name, self.table_name, [s.split(':') for s in self.schema])
+        client = self.config.get_client()
+        logger.debug('{0}: creating table: {1}.{2}'.format(self, self.database_name, self.table_name))
+        client.create_log_table(self.database_name, self.table_name)
+        if self.schema != []:
+            logger.debug('{0}: updating schema for {1}.{2}'.format(self, self.database_name, self.table_name))
+            client.update_schema(self.database_name, self.table_name, [s.split(':') for s in self.schema])
 
 # query
 
@@ -69,11 +74,11 @@ class Query(luigi.Task):
         result_url = None
         if isinstance(result, ResultTarget):
             result_url = result.get_result_url()
-        td = self.config.get_client()
-        job = td.query(self.database, 
-                       query,
-                       type = self.type,
-                       result_url = result_url)
+        client = self.config.get_client()
+        job = client.query(self.database, 
+                           query,
+                           type = self.type,
+                           result_url = result_url)
         job._update_status()
         logger.info("{task}: td.job.url: {url}".format(task=self, url=job.url))
 

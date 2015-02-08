@@ -47,8 +47,17 @@ class MockClient(object):
         self._tables = tables
         self._jobs = jobs
 
+    def create_database(self, name):
+        self._databases.append(name)
+
     def databases(self):
         return [MockDatabase(name) for name in self._databases]
+
+    def create_log_table(self, database, name):
+        self._tables.append("{0}.{1}".format(database, name))
+
+    def update_schema(self, database, name, schema):
+        pass
 
     def table(self, database, name):
         if "{0}.{1}".format(database, name) in self._tables:

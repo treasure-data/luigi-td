@@ -1,4 +1,6 @@
 from test_helper import TestConfig
+from task import DatabaseTask
+from task import TableTask
 from task import Query
 from targets import ResultTarget
 
@@ -18,6 +20,28 @@ test_config = TestConfig(
         }
     ]
 )
+
+# DatabaseTask
+
+class TestDatabaseTask(DatabaseTask):
+    config = test_config
+
+class DatabaseTaskTestCase(TestCase):
+    def test_create(self):
+        task = TestDatabaseTask('test_db')
+        task.run()
+
+# TableTask
+
+class TestTableTask(TableTask):
+    config = test_config
+
+class TableTaskTestCase(TestCase):
+    def test_create(self):
+        task = TestTableTask('test_db', 'test_table')
+        task.run()
+
+# Query
 
 class TestQuery(Query):
     config = test_config
