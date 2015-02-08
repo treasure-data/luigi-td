@@ -75,7 +75,7 @@ class Query(luigi.Task):
                        type = self.type,
                        result_url = result_url)
         job._update_status()
-        logger.info("{task}: td.job_url: {url}".format(task=self, url=job.url))
+        logger.info("{task}: td.job.url: {url}".format(task=self, url=job.url))
 
         # wait for the result
         try:
@@ -87,7 +87,7 @@ class Query(luigi.Task):
             raise
         job._update_status()
 
-        logger.info("{task}: td.job_result: id={job_id} status={status}".format(
+        logger.info("{task}: td.job.result: id={job_id} status={status}".format(
             task = self,
             job_id = job.job_id,
             status = job.status(),
