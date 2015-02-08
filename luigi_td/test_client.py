@@ -1,20 +1,10 @@
 from client import ResultProxy
+from test_helper import MockJob
 
 from unittest import TestCase
 from nose.tools import eq_, raises
 
 import tempfile
-
-class MockJob(object):
-    def __init__(self, spec):
-        self.spec = spec
-        self.job_id = spec['job_id']
-        self.status = spec['status']
-        self._result_size = spec['size']
-        self._hive_result_schema = spec['description']
-
-    def result(self):
-        return iter(self.spec['rows'])
 
 class ResultProxyTestCase(TestCase):
     SUCCESS_JOB = {
