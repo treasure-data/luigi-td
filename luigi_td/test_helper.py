@@ -1,3 +1,5 @@
+from client import ResultProxy
+
 import os
 import shutil
 import tempfile
@@ -18,8 +20,8 @@ class MockJob(object):
         self.spec = spec
         self.job_id = spec['job_id']
         self.url = 'https://mock.example.com/jobs/{0}'.format(spec['job_id'])
-        self._result_size = spec['size']
-        self._hive_result_schema = spec['description']
+        self._result_size = spec.get('size')
+        self._hive_result_schema = spec.get('description', [])
 
     def _update_status(self):
         pass
@@ -52,6 +54,14 @@ class MockClient(object):
         if "{0}.{1}".format(database, name) in self._tables:
             return MockTable(database, name)
         raise tdclient.api.NotFoundError(database, name)
+
+    def jobs(self):
+        return [MockJob(job) for job in self._jobs]
+
+    def job(self, job_id):
+        for job in self.jobs():
+            if job.job_id == job_id:
+                return job
 
     def query(self, database, query, type='hive', result_url=None):
         return MockJob(self._jobs[0])

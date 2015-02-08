@@ -108,7 +108,7 @@ class Query(luigi.Task):
         result = self.run_query(query)
         target = self.output()
         if target and isinstance(target, ResultTarget):
-            target.save_state(result)
+            target.save_result_state(result)
 
         if self.debug:
             import pandas as pd
