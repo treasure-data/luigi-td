@@ -1,13 +1,13 @@
 from task import Query
 from targets import ResultTarget
-from test_helper import MockClient
+from test_helper import TestEnv, MockClient
 
 from unittest import TestCase
 from nose.tools import eq_, raises
 
-import os
-import shutil
 import luigi
+
+env = TestEnv()
 
 class TestConfig(object):
     def __init__(self, spec):
@@ -33,11 +33,10 @@ class TestQuery(Query):
 
 class QueryTestCase(TestCase):
     def setUp(self):
-        if not os.path.exists('test-tmp'):
-            os.mkdir('test-tmp')
+        env.setUp()
 
     def tearDown(self):
-        shutil.rmtree('test-tmp')
+        env.tearDown()
 
     def test_simple(self):
         class SimpleTestQuery(TestQuery):
@@ -48,18 +47,18 @@ class QueryTestCase(TestCase):
     def test_with_output(self):
         class OutputTestQuery(TestQuery):
             def output(self):
-                return ResultTarget('test-tmp/{0}.job'.format(self))
+                return ResultTarget(env.get_tmp_path('{0}.job'.format(self)))
         task = OutputTestQuery()
         task.run()
 
     def test_with_dependency(self):
         class DependencyTestQuery(TestQuery):
             def output(self):
-                return ResultTarget('test-tmp/{0}.job'.format(self))
+                return ResultTarget(env.get_tmp_path('{0}.job'.format(self)))
         class DependencyTestResult(luigi.Task):
             def requires(self):
                 return DependencyTestQuery()
             def output(self):
-                return LocalTarget('test-tmp/{0}.csv'.format(self))
+                return LocalTarget(env.get_tmp_path('{0}.csv'.format(self)))
         task = DependencyTestResult()
         task.run()

@@ -1,3 +1,23 @@
+import os
+import shutil
+import tempfile
+
+class TestEnv(object):
+    def __init__(self):
+        self.tmp_dir = None
+
+    def setUp(self):
+        if not self.tmp_dir:
+            self.tmp_dir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        if self.tmp_dir:
+            shutil.rmtree(self.tmp_dir)
+            self.tmp_dir = None
+
+    def get_tmp_path(self, filename):
+        return os.path.join(self.tmp_dir, filename)
+
 class MockJob(object):
     def __init__(self, spec):
         self.spec = spec
