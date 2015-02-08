@@ -6,27 +6,32 @@ import tdclient
 import logging
 logger = logging.getLogger('luigi-interface')
 
-__all__ = ['DatabaseTarget', 'TableTarget']
+__all__ = ['DatabaseTarget', 'TableTarget', 'SchemaError']
+
+class SchemaError(Exception):
+    pass
 
 class DatabaseTarget(luigi.Target):
-    def __init__(self, database_name):
+    def __init__(self, database_name, config=None):
         self.database_name = database_name
+        self.config = config or get_confg()
 
     def exists(self):
-        td = config.get_client()
-        return self.database_name in [db.name for db in td.databases()]
+        client = self.config.get_client()
+        return self.database_name in [db.name for db in client.databases()]
 
 class TableTarget(luigi.Target):
-    def __init__(self, database_name, table_name, schema=[], empty=False):
+    def __init__(self, database_name, table_name, schema=[], empty=False, config=None):
         self.database_name = database_name
         self.table_name = table_name
         self.schema = schema
         self.empty = empty
+        self.config = config or get_confg()
 
     def exists(self):
-        td = config.get_client()
+        client = self.config.get_client()
         try:
-            t = td.table(self.database_name, self.table_name)
+            t = client.table(self.database_name, self.table_name)
         except tdclient.api.NotFoundError:
             return False
         if self.empty:
@@ -34,7 +39,7 @@ class TableTarget(luigi.Target):
                 return True
             else:
                 logger.debug('Deleting table: {0}.{1}'.format(self.database_name, self.table_name))
-                td.delete_table(self.database_name, self.table_name)
+                client.delete_table(self.database_name, self.table_name)
                 return False
         else:
             if t:
@@ -42,7 +47,7 @@ class TableTarget(luigi.Target):
                 if table_schema != list(self.schema):
                     logger.error('Current schema: {0}'.format(table_schema))
                     logger.error('Expected schema: {0}'.format(self.schema))
-                    raise ValueError('table schema for {0}.{1} does not match'.format(self.database_name, self.table_name))
+                    raise SchemaError('table schema for {0}.{1} does not match'.format(self.database_name, self.table_name))
                 return True
             else:
                 return False

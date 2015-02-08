@@ -1,6 +1,17 @@
 import os
 import shutil
 import tempfile
+import tdclient
+
+class MockDatabase(object):
+    def __init__(self, name):
+        self.name = name
+
+class MockTable(object):
+    def __init__(self, database, name):
+        self.database = database
+        self.name = name
+        self.schema = []
 
 class MockJob(object):
     def __init__(self, spec):
@@ -35,7 +46,12 @@ class MockClient(object):
         self._jobs = jobs
 
     def databases(self):
-        return iter(self._databases)
+        return [MockDatabase(name) for name in self._databases]
+
+    def table(self, database, name):
+        if "{0}.{1}".format(database, name) in self._tables:
+            return MockTable(database, name)
+        raise tdclient.api.NotFoundError(database, name)
 
     def query(self, database, query, type='hive', result_url=None):
         return MockJob(self._jobs[0])
