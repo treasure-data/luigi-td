@@ -8,7 +8,7 @@ class ResultProxy(object):
 
     @property
     def status(self):
-        return self.job.status
+        return self.job.status()
 
     @property
     def job_id(self):
