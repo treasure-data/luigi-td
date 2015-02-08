@@ -13,6 +13,14 @@ You can use ``pip`` to install the latest released version of Luigi-TD::
 
   $ pip install luigi-td
 
+If you are using ``requirements.txt``, put the following line::
+
+  # requirements.txt
+  luigi-td>=0.6.0,<0.7.0
+
+.. warning::
+  ``<0.7.0`` is necessary.  Luigi-TD does not guarantee backward compatibility at this time and could make incompatible changes in the next version.
+
 Configuration
 =============
 
