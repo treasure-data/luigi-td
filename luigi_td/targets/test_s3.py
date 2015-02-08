@@ -22,7 +22,6 @@ class TableauServerResultTargetTestCase(TestCase):
         target.aws_secret_access_key = 'AWS_SECRET_ACCESS_KEY'
         target.bucket = 'test-bucket'
         target.path = 'test-prefix/test.tsv'
-        print target.get_result_url()
         url = urlparse.urlparse(target.get_result_url())
         params = urlparse.parse_qs(url.query)
         eq_(url.scheme, 's3')
