@@ -38,7 +38,7 @@ class TableTask(luigi.Task):
     empty = luigi.BooleanParameter(default=False, significant=False)
 
     def requires(self):
-        return CreateDatabase(self.database_name)
+        return DatabaseTask(self.database_name)
 
     def output(self):
         return TableTarget(self.database_name, self.table_name, self.schema, empty=self.empty)
