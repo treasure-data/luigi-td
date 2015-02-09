@@ -21,10 +21,10 @@ class DatabaseTarget(luigi.Target):
         return self.database_name in [db.name for db in client.databases()]
 
 class TableTarget(luigi.Target):
-    def __init__(self, database_name, table_name, schema=[], empty=False, config=None):
+    def __init__(self, database_name, table_name, schema=None, empty=False, config=None):
         self.database_name = database_name
         self.table_name = table_name
-        self.schema = schema
+        self.schema = schema or []
         self.empty = empty
         self.config = config or get_config()
 
