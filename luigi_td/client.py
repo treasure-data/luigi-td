@@ -1,5 +1,3 @@
-import tdclient
-
 __all__ = ['ResultProxy']
 
 class ResultProxy(object):
