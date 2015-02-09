@@ -14,7 +14,7 @@ class SchemaError(Exception):
 class DatabaseTarget(luigi.Target):
     def __init__(self, database_name, config=None):
         self.database_name = database_name
-        self.config = config or get_confg()
+        self.config = config or get_config()
 
     def exists(self):
         client = self.config.get_client()
@@ -26,7 +26,7 @@ class TableTarget(luigi.Target):
         self.table_name = table_name
         self.schema = schema
         self.empty = empty
-        self.config = config or get_confg()
+        self.config = config or get_config()
 
     def exists(self):
         client = self.config.get_client()
