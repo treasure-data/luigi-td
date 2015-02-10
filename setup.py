@@ -8,7 +8,7 @@ setup(
     description="Luigi integration for Treasure Data",
     author="Treasure Data, Inc.",
     author_email="support@treasure-data.com",
-    url="https://github.com/k24d/luigi-td",
+    url="https://github.com/treasure-data/luigi-td",
     install_requires=open("requirements.txt").read().splitlines(),
     packages=find_packages(),
     license="Apache License 2.0",

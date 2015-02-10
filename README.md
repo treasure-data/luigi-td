@@ -1,8 +1,8 @@
 # Luigi-TD
 
-[![Build Status](https://travis-ci.org/k24d/luigi-td.svg?branch=master)](https://travis-ci.org/k24d/luigi-td)
-[![Code Health](https://landscape.io/github/k24d/luigi-td/master/landscape.svg?style=flat)](https://landscape.io/github/k24d/luigi-td/master)
-[![Coverage Status](https://coveralls.io/repos/k24d/luigi-td/badge.svg?branch=master)](https://coveralls.io/r/k24d/luigi-td?branch=master)
+[![Build Status](https://travis-ci.org/treasure-data/luigi-td.svg?branch=master)](https://travis-ci.org/treasure-data/luigi-td)
+[![Code Health](https://landscape.io/github/treasure-data/luigi-td/master/landscape.svg?style=flat)](https://landscape.io/github/treasure-data/luigi-td/master)
+[![Coverage Status](https://coveralls.io/repos/treasure-data/luigi-td/badge.svg?branch=master)](https://coveralls.io/r/treasure-data/luigi-td?branch=master)
 [![PyPI version](https://badge.fury.io/py/luigi-td.svg)](http://badge.fury.io/py/luigi-td)
 [![Documentation Status](https://readthedocs.org/projects/luigi-td/badge/?version=latest)](https://readthedocs.org/projects/luigi-td/?badge=latest)
 

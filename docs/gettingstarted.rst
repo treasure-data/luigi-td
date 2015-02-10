@@ -44,7 +44,7 @@ Running Queries
 
 .. note::
 
-  All scripts in this tutorial are available online at http://github.com/k24d/luigi-td/example/tutorial/tasks.py
+  All scripts in this tutorial are available online at http://github.com/treasure-data/luigi-td/example/tutorial/tasks.py
 
 Queries are defined as subclasses of ``Query``::
 
