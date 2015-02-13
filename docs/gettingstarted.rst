@@ -136,7 +136,8 @@ The ``output`` method can be defined in the same way as regular Luigi tasks.  Fo
 
       def run(self):
           result = self.run_query(self.query())
-          result.to_csv(self.output().path)
+          with self.output().open('w') as f:
+              result.to_csv(f)
 
 Building Pipelines
 ==================
@@ -177,7 +178,8 @@ Instead of retrieving the result immediately, you can save "the state of a query
       def run(self):
           target = self.input()
           # retrieve the result and save it as a local CSV file
-          target.result.to_csv(self.output().path)
+          with self.output().open('w') as f:
+              target.result.to_csv(f)
 
   class MyQueryStep3(luigi.Task):
       def requires(self):

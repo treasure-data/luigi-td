@@ -23,13 +23,19 @@ class ResultProxy(object):
     def __iter__(self):
         return self.job.result()
 
-    def to_csv(self, path):
-        # TODO: need optimization
-        with file(path, 'w') as f:
+    def to_csv(self, path_or_file):
+        def _to_csv(f):
+            # TODO: need optimization
             f.write(",".join([c[0] for c in self.description]))
             f.write("\n")
             for row in self:
                 f.write(",".join([str(c) if c else '' for c in row]) + "\n")
+
+        if type(path_or_file) in [str, unicode]:
+            with file(path_or_file, 'w') as f:
+                return _to_csv(f)
+        else:
+            return _to_csv(path_or_file)
 
     def to_dataframe(self):
         # TODO: need optimization

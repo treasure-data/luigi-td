@@ -45,7 +45,8 @@ class MyQuerySave(luigi_td.Query):
 
     def run(self):
         result = self.run_query(self.query())
-        result.to_csv(self.output().path)
+        with self.output().open('w') as f:
+            result.to_csv(f)
 
 ## Building Pipelines
 
@@ -70,7 +71,8 @@ class MyQueryStep2(luigi.Task):
     def run(self):
         target = self.input()
         # retrieve the result and save it as a local CSV file
-        target.result.to_csv(self.output().path)
+        with self.output().open('w') as f:
+            target.result.to_csv(f)
 
 class MyQueryStep3(luigi.Task):
     def requires(self):
