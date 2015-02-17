@@ -4,10 +4,7 @@ from luigi_td.targets.result import ResultTarget
 from luigi_td.targets.td import DatabaseTarget
 from luigi_td.targets.td import TableTarget
 
-import os
-import sys
 import time
-import urllib
 import luigi
 import jinja2
 
@@ -26,7 +23,7 @@ class DatabaseTask(luigi.Task):
 
     def run(self):
         client = self.config.get_client()
-        logger.debug('{0}: creating database: {1}'.format(self, self.database_name))
+        logger.debug('%s: creating database: %s', self, self.database_name)
         client.create_database(self.database_name)
 
 class TableTask(luigi.Task):
@@ -45,10 +42,10 @@ class TableTask(luigi.Task):
 
     def run(self):
         client = self.config.get_client()
-        logger.debug('{0}: creating table: {1}.{2}'.format(self, self.database_name, self.table_name))
+        logger.debug('%s: creating table: %s.%s', self, self.database_name, self.table_name)
         client.create_log_table(self.database_name, self.table_name)
         if self.schema != []:
-            logger.debug('{0}: updating schema for {1}.{2}'.format(self, self.database_name, self.table_name))
+            logger.debug('%s: updating schema for %s.%s', self, self.database_name, self.table_name)
             client.update_schema(self.database_name, self.table_name, [s.split(':') for s in self.schema])
 
 # query
@@ -80,7 +77,7 @@ class Query(luigi.Task):
                            type = self.type,
                            result_url = result_url)
         job._update_status()
-        logger.info("{task}: td.job.url: {url}".format(task=self, url=job.url))
+        logger.info("%s: td.job.url: %s", self, job.url)
 
         # wait for the result
         try:
@@ -92,11 +89,7 @@ class Query(luigi.Task):
             raise
         job._update_status()
 
-        logger.info("{task}: td.job.result: id={job_id} status={status}".format(
-            task = self,
-            job_id = job.job_id,
-            status = job.status(),
-        ))
+        logger.info("%s: td.job.result: id=%s status=%s", self, job.job_id, job.status())
 
         if not job.success():
             stderr = job._debug['stderr']
