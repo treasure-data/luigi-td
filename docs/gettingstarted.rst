@@ -28,7 +28,7 @@ You can set your API key as an environment variable ``TD_API_KEY``::
 
   $ export TD_API_KEY=1/1c410625...
 
-Alternatively, you can use the Luigi configuration file (``/etc/luigi/client.cfg`` by default)::
+Alternatively, you can use the Luigi configuration file (``./client.cfg`` or ``/etc/luigi/client.cfg`` by default)::
 
   # configuration for Luigi
   [core]
