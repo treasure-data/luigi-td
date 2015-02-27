@@ -58,7 +58,7 @@ class MyQueryStep1(luigi_td.Query):
         return "SELECT count(1) cnt FROM www_access"
 
     def output(self):
-        # the query state is stored by ResultTarget
+        # the query state is stored as a local file
         return luigi_td.ResultTarget('MyQueryStep1.job')
 
 class MyQueryStep2(luigi.Task):
@@ -69,17 +69,16 @@ class MyQueryStep2(luigi.Task):
         return luigi.LocalTarget('MyQueryStep2.csv')
 
     def run(self):
-        target = self.input()
-        # retrieve the result and save it as a local CSV file
+        # retrieve the result and save it as a CSV file
         with self.output().open('w') as f:
-            target.result.to_csv(f)
+            self.input().result.to_csv(f)
 
 class MyQueryStep3(luigi.Task):
     def requires(self):
         return MyQueryStep2()
 
     def output(self):
-        return luigi.LocalTarget('MyQueryStep3.csv')
+        return luigi.LocalTarget('MyQueryStep3.txt')
 
     def run(self):
         with self.input().open() as f:

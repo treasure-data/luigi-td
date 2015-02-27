@@ -19,7 +19,7 @@ If you are using ``requirements.txt``, put the following line::
   luigi-td>=0.6.0,<0.7.0
 
 .. warning::
-  ``<0.7.0`` is necessary.  Luigi-TD does not guarantee backward compatibility at this time and could make incompatible changes in the next version.
+  ``<0.7.0`` is necessary.  Luigi-TD currently does not guarantee backward compatibility and can make incompatible changes in future versions.
 
 Configuration
 =============
@@ -28,7 +28,7 @@ You can set your API key as an environment variable ``TD_API_KEY``::
 
   $ export TD_API_KEY=1/1c410625...
 
-Alternatively, you can use the Luigi configuration file (``./client.cfg`` or ``/etc/luigi/client.cfg`` by default)::
+Alternatively, you can use Luigi configuration file (``./client.cfg`` or ``/etc/luigi/client.cfg``)::
 
   # configuration for Luigi
   [core]
@@ -77,12 +77,12 @@ You can submit your query as a normal Python script as follows::
   INFO: MyQuery(): td.job.result: job_id=19958264 status=success
   INFO: [pid 1234] Worker Worker(salt=123456789, host=...) done      MyQuery()
 
-You will find INFO messages "td.job.url" and "td.job.result" in the log.  The result of your query is accessible by opening the URL with your favorite browser.
+As you see INFO messages "td.job.url" and "td.job.result" in the log, you can access to the query result by opening the URL with your favorite browser.
 
 Getting Results
 ===============
 
-You will want to retrieve query results within Python for further processing.  A straightforward way of doing that is to overwrite the ``run`` method and call ``run_query``::
+You will often retrieve query results within Python for further processing.  A straightforward way of doing that is to overwrite the ``run`` method and call ``run_query``::
 
   class MyQueryRun(luigi_td.Query):
       type = 'presto'
@@ -103,7 +103,7 @@ You will want to retrieve query results within Python for further processing.  A
               print "\t".join([str(c) for c in row])
           print '===================='
 
-The return value of ``run_query`` is an instance of ``ResultProxy``, and you can fetch the result immediately::
+In this case, you can start processing the result as soon as your query completed::
 
   $ python tasks.py MyQueryRun --local-scheduler
   ...
@@ -120,9 +120,9 @@ The return value of ``run_query`` is an instance of ``ResultProxy``, and you can
   ====================
   INFO: [pid 1234] Worker Worker(salt=123456789, host=...) done      MyQueryResult()
 
-In practice, however, you should store the result before processing it when you build a data pipeline with Luigi.  As you are working with "big data", running a query could take a long time and retrieving the query result over network might be considerably slow.  It is always recommended that you create a local copy of your query results and work with it.
+In practice, however, you should store the result before processing it when you build a data pipeline with Luigi.  As you are working with "big data", running a query could take a long time and retrieving the query result might be considerably slow.  It is always recommended that you create a local copy of your query result and work with it.
 
-The ``output`` method can be defined in the same way as regular Luigi tasks.  For example, you can use ``luigi.LocalTarget``, combined with ``to_csv``, to save the result to a local file::
+A best practice of writing a query is to define an ``output`` method explicitly, just like you do with other Luigi tasks.  For example, you can use ``luigi.LocalTarget``, combined with ``to_csv``, to save the result to a local file::
 
   class MyQuerySave(luigi_td.Query):
       type = 'presto'
@@ -147,15 +147,15 @@ A "data pipeline" is a series of tasks, passing the result of one task to anothe
 .. image:: _static/images/pipeline.png
   :width: 500px
 
-Each task does substantial amount of work, and you want to run them separately.  You can split your query into 3 steps:
+Each task does substantial amount of work, and you want to run them step by step.  For example, you can split your query into 3 steps:
 
 1. Running a query
 2. Retrieving the result
 3. Processing the result
 
-You should avoid repeating the same process again since each step could consume huge resources (i.e., cpu time, network bandwidth, etc.).  Consider that you had a bug in step 3, and you didn't save the result in step 2.  You would run the same query and download the result again and again until you fixed the bug successfully.
+Each output of a task works as a "checkpoint" in your data pipeline.  You can restart your pipeline from the latest checkout when a task failed.  Consider you had a bug in step 3 and you didn't save the result in step 2.  You would run the same query again and again until you fix the bug successfully.
 
-Instead of retrieving the result immediately, you can save "the state of a query" locally and then run a different task that retrieves the result.  This is actually the default behavior of ``Query``, and you can use ``ResultTarget`` to store the state::
+Instead of retrieving the result immediately, you can use ``ResultTarget`` to save "the query state" to a local file::
 
   class MyQueryStep1(luigi_td.Query):
       type = 'presto'
@@ -165,7 +165,7 @@ Instead of retrieving the result immediately, you can save "the state of a query
           return "SELECT count(1) cnt FROM www_access"
 
       def output(self):
-          # the query state is stored by ResultTarget
+          # the query state is stored as a local file
           return luigi_td.ResultTarget('MyQueryStep1.job')
 
   class MyQueryStep2(luigi.Task):
@@ -176,17 +176,16 @@ Instead of retrieving the result immediately, you can save "the state of a query
           return luigi.LocalTarget('MyQueryStep2.csv')
 
       def run(self):
-          target = self.input()
-          # retrieve the result and save it as a local CSV file
+          # retrieve the result and save it as a CSV file
           with self.output().open('w') as f:
-              target.result.to_csv(f)
+              self.input().result.to_csv(f)
 
   class MyQueryStep3(luigi.Task):
       def requires(self):
           return MyQueryStep2()
 
       def output(self):
-          return luigi.LocalTarget('MyQueryStep3.csv')
+          return luigi.LocalTarget('MyQueryStep3.txt')
 
       def run(self):
           with self.input().open() as f:
@@ -196,7 +195,7 @@ Instead of retrieving the result immediately, you can save "the state of a query
               # crate the final output
               f.write('done')
 
-As you can see in this example, the preceding tasks are required by the following tasks, using the ``requires`` method.  Luigi's scheduler resolves the dependency and all tasks will be executed one after another just by running the last task::
+As you can see in this example, the preceding tasks are required by the following tasks, using ``requires`` methods.  Luigi's scheduler resolves the dependency and all tasks are executed just by running the last one::
 
   $ python tasks.py MyQueryStep3 --local-scheduler
   ...
@@ -214,7 +213,7 @@ As you can see in this example, the preceding tasks are required by the followin
 
   INFO: [pid 1234] Worker Worker(salt=123456789, host=...) done      MyQueryStep3()
 
-This looks complex at the first glance, but you will eventually find it being a natural way of building data pipilines with Luigi.  Every single task should define an explicit ``output`` method so that you can avoid repeated execution of the same task.
+This looks complex at the first glance, but you will eventually find it being a natural way of building data pipilines.  Every single task should define an explicit ``output`` method so you can avoid repeated execution of the same task.
 
 Templating Queries
 ==================
@@ -290,13 +289,13 @@ Luigi supports passing parameters as command line options or constructor argumen
   GROUP BY
     td_time_format(time, 'yyyy-MM')
 
-In this example, a parameter ``year`` is defined as an integer.  You can set it by a command line option as follows::
+In this example, the parameter ``year`` is defined as an integer.  You can set the value by a command line option as follows::
 
   $ python tasks.py MyQueryWithParameters --local-scheduler --year 2010
   INFO: Scheduled MyQueryWithParameters(year=2010) (PENDING)
   ...
 
-The query template is rendered using parameters.  You will get the following query, consequently::
+Your query template will be rendered using parameters, just in the same way as variables.  You will get the following query, consequently::
 
   -- templates/query_with_time_range.sql
   SELECT
