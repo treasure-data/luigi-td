@@ -74,7 +74,7 @@ You can submit your query as a normal Python script as follows::
   DEBUG: Pending tasks: 1
   INFO: [pid 1234] Worker Worker(salt=123456789, host=...) running   MyQuery()
   INFO: MyQuery(): td.job.url: https://console.treasuredata.com/jobs/19958264
-  INFO: MyQuery(): td.job.result: id=19958264 status=success
+  INFO: MyQuery(): td.job.result: job_id=19958264 status=success
   INFO: [pid 1234] Worker Worker(salt=123456789, host=...) done      MyQuery()
 
 You will find INFO messages "td.job.url" and "td.job.result" in the log.  The result of your query is accessible by opening the URL with your favorite browser.
@@ -109,7 +109,7 @@ The return value of ``run_query`` is an instance of ``ResultProxy``, and you can
   ...
   INFO: [pid 1234] Worker Worker(salt=123456789, host=...) running   MyQueryRun()
   INFO: MyQueryRun(): td.job.url: https://console.treasuredata.com/jobs/19958264
-  INFO: MyQueryRun(): td.job.result: id=19958264 status=success
+  INFO: MyQueryRun(): td.job.result: job_id=19958264 status=success
   ====================
   Job ID     : 19958264
   Result size: 24
@@ -202,7 +202,7 @@ As you can see in this example, the preceding tasks are required by the followin
   ...
   INFO: [pid 1234] Worker Worker(salt=123456789, host=...) running   MyQueryStep1()
   INFO: MyQueryStep1(): td.job.url: https://console.treasuredata.com/jobs/19958264
-  INFO: MyQueryStep1(): td.job.result: id=19958264 status=success
+  INFO: MyQueryStep1(): td.job.result: job_id=19958264 status=success
   INFO: [pid 1234] Worker Worker(salt=123456789, host=...) done      MyQueryStep1()
   ...
   INFO: [pid 1234] Worker Worker(salt=123456789, host=...) running   MyQueryStep2()

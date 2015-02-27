@@ -89,7 +89,7 @@ class Query(luigi.Task):
             raise
         job._update_status()
 
-        logger.info("%s: td.job.result: id=%s status=%s", self, job.job_id, job.status())
+        logger.info("%s: td.job.result: job_id=%s status=%s", self, job.job_id, job.status())
 
         if not job.success():
             stderr = job._debug['stderr']
