@@ -14,13 +14,13 @@ __all__ = [
     'ResultProxy',
     # config
     'Config',
-    'get_config'
+    'get_config',
     # task
     'DatabaseTask',
     'TableTask',
     'Query',
     # targets.result
-    'ResultTarget'
+    'ResultTarget',
     # targets.s3
     'S3ResultTarget',
     # targets.tableau
