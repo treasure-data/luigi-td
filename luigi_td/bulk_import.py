@@ -1,11 +1,9 @@
 from config import get_config
 
-import collections
 import json
 import os
 import subprocess
 import shutil
-import tempfile
 import time
 import urlparse
 import luigi
@@ -32,7 +30,7 @@ class BulkImportUploadContext(object):
         os.environ.update(self._env)
         return self
 
-    def __exit__(self, type, value, tb):
+    def __exit__(self, exc_type, value, traceback):
         os.environ.clear()
         os.environ.update(self._cur_env)
         os.chdir(self._cur_dir)
@@ -136,7 +134,7 @@ class BulkImportUpload(luigi.Task):
         with BulkImportUploadContext(env, log_dir=self.log_dir, tmp_dir=self.tmp_dir):
             logger.debug(' '.join(args))
             p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            out, err = p.communicate()
+            _, err = p.communicate()
             if p.returncode != 0:
                 raise RuntimeError(err)
 
