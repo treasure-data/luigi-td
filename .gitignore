@@ -1,5 +1,6 @@
 *.pyc
 .coverage
+client.cfg
 build
 dist
 luigi_td.egg-info
