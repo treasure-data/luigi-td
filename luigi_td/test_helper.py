@@ -41,11 +41,28 @@ class MockJob(object):
     def result(self):
         return iter(self.spec['rows'])
 
+class MockBulkImport(object):
+    def __init__(self, spec):
+        self.spec = spec
+
+    @property
+    def upload_frozen(self):
+        return self.spec['frozen']
+
+    @property
+    def status(self):
+        return self.spec['status']
+
+    @property
+    def job_id(self):
+        return self.spec['job_id']
+
 class MockClient(object):
-    def __init__(self, databases, tables, jobs):
+    def __init__(self, databases, tables, jobs, bulk_imports):
         self._databases = databases
         self._tables = tables
         self._jobs = jobs
+        self._bulk_imports = bulk_imports
 
     def create_database(self, name):
         self._databases.append(name)
@@ -75,11 +92,32 @@ class MockClient(object):
     def query(self, database, query, type='hive', result_url=None):
         return MockJob(self._jobs[0])
 
+    def bulk_import(self, session):
+        for spec in self._bulk_imports:
+            if spec['session'] == session:
+                return MockBulkImport(spec)
+        raise tdclient.api.NotFoundError(session)
+
+    def create_bulk_import(self, session, database, table):
+        return self.bulk_import(session)
+
+    def freeze_bulk_import(self, session):
+        pass
+
+    def perform_bulk_import(self, session):
+        return MockJob(self._jobs[0])
+
+    def commit_bulk_import(self, session):
+        pass
+
 class TestConfig(object):
-    def __init__(self, databases=[], tables=[], jobs=[]):
+    def __init__(self, databases=[], tables=[], jobs=[], bulk_imports=[]):
         self._databases = databases
         self._tables = tables
         self._jobs = jobs
+        self._bulk_imports = bulk_imports
+        self.endpoint = 'http://test.example.com'
+        self.apikey = 'test-key'
         self.tmp_dir = None
 
     def setUp(self):
@@ -95,4 +133,4 @@ class TestConfig(object):
         return os.path.join(self.tmp_dir, filename)
 
     def get_client(self):
-        return MockClient(databases=self._databases, tables=self._tables, jobs=self._jobs)
+        return MockClient(databases=self._databases, tables=self._tables, jobs=self._jobs, bulk_imports=self._bulk_imports)
