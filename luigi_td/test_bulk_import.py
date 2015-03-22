@@ -254,7 +254,7 @@ class BulkImportTestCase(TestCase):
         eq_(task.get_path(), 's3://test-key:test-secret@/test-bucket/test_input.tsv')
 
     def test_run_without_commit(self):
-        task = TestBulkImport('session-4', commit=False)
+        task = TestBulkImport('session-4', no_commit=True)
         for req in task.run():
             eq_(type(req), BulkImportPerform)
 
