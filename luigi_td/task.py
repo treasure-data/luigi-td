@@ -48,9 +48,13 @@ class TableTask(luigi.Task):
 
 # query
 
+class Timeout(Exception):
+    pass
+
 class Query(luigi.Task):
     config = get_config()
     debug = False
+    timeout = None
     type = 'hive'
     database = None
     source = None
@@ -79,7 +83,13 @@ class Query(luigi.Task):
 
         # wait for the result
         try:
+            if self.timeout:
+                timeout = time.time() + self.timeout
+            else:
+                timeout = None
             while not job.finished():
+                if timeout and time.time() > timeout:
+                    raise Timeout('{0} timed out'.format(self))
                 time.sleep(2)
         except:
             # kill query on exceptions
