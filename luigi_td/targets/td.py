@@ -6,8 +6,6 @@ import tdclient
 import logging
 logger = logging.getLogger('luigi-interface')
 
-__all__ = ['DatabaseTarget', 'TableTarget', 'SchemaError']
-
 class SchemaError(Exception):
     pass
 

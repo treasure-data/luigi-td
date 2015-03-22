@@ -5,8 +5,6 @@ import urllib
 import logging
 logger = logging.getLogger('luigi-interface')
 
-__all__ = ['S3ResultTarget']
-
 class S3ResultTarget(ResultTarget):
     aws_access_key_id = None
     aws_secret_access_key = None

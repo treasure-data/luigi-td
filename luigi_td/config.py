@@ -7,8 +7,6 @@ logger = logging.getLogger('luigi-interface')
 
 DEFAULT_ENDPOINT = 'https://api.treasuredata.com/'
 
-__all__ = ['Config', 'get_config']
-
 class Config(object):
     def __init__(self, apikey, endpoint=DEFAULT_ENDPOINT):
         self.apikey = apikey

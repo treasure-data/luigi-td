@@ -5,8 +5,6 @@ import urllib
 import logging
 logger = logging.getLogger('luigi-interface')
 
-__all__ = ['TableauServerResultTarget', 'TableauOnlineResultTarget']
-
 class TableauServerResultTarget(ResultTarget):
     # required
     server = None

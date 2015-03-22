@@ -8,8 +8,6 @@ import os
 import logging
 logger = logging.getLogger('luigi-interface')
 
-__all__ = ['ResultTarget']
-
 class ResultTarget(luigi.Target):
     def __init__(self, path, result_url=None, config=None):
         self.path = path

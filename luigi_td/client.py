@@ -1,5 +1,3 @@
-__all__ = ['ResultProxy']
-
 class ResultProxy(object):
     def __init__(self, job):
         self.job = job

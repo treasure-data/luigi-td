@@ -16,8 +16,8 @@ import logging
 logger = logging.getLogger('luigi-interface')
 
 class BulkImportUploadContext(object):
-    def __init__(self, env={}, log_dir='log', tmp_dir='tmp'):
-        self._env = env
+    def __init__(self, env=None, log_dir='log', tmp_dir='tmp'):
+        self._env = env or {}
         self._cur_dir = os.getcwd()
         self._cur_env = os.environ.copy()
         self.log_dir = log_dir

@@ -11,8 +11,6 @@ import jinja2
 import logging
 logger = logging.getLogger('luigi-interface')
 
-__all__ = ['DatabaseTask', 'TableTask', 'Query']
-
 class DatabaseTask(luigi.Task):
     config = get_config()
     database_name = luigi.Parameter()
