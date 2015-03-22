@@ -61,7 +61,7 @@ class Query(luigi.Task):
 
     def load_query(self, source):
         env = jinja2.Environment(loader=jinja2.PackageLoader(self.__module__, '.'))
-        template = env.get_template(self.source)
+        template = env.get_template(source)
         return template.render(task=self, **self.variables)
 
     def run_query(self, query):
