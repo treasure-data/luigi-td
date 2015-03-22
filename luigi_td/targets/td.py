@@ -36,15 +36,15 @@ class TableTarget(luigi.Target):
             if t and t.count == 0 and [':'.join(c) for c in t.schema] == list(self.schema):
                 return True
             else:
-                logger.debug('Deleting table: {0}.{1}'.format(self.database_name, self.table_name))
+                logger.debug('Deleting table: %s.%s', self.database_name, self.table_name)
                 client.delete_table(self.database_name, self.table_name)
                 return False
         else:
             if t:
                 table_schema = [str(':'.join(c)) for c in t.schema]
                 if table_schema != list(self.schema):
-                    logger.error('Current schema: {0}'.format(table_schema))
-                    logger.error('Expected schema: {0}'.format(self.schema))
+                    logger.error('Current schema: %s', table_schema)
+                    logger.error('Expected schema: %s', self.schema)
                     raise SchemaError('table schema for {0}.{1} does not match'.format(self.database_name, self.table_name))
                 return True
             else:
