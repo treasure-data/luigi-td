@@ -11,6 +11,8 @@ class Config(object):
     def __init__(self, apikey, endpoint=DEFAULT_ENDPOINT):
         self.apikey = apikey
         self.endpoint = endpoint
+        if not self.endpoint.endswith('/'):
+            self.endpoint += '/'
 
     def get_client(self):
         return tdclient.Client(self.apikey, endpoint=self.endpoint)

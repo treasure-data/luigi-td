@@ -18,7 +18,7 @@ class ConfigTestCase(TestCase):
         config = Config('test-apikey', endpoint='https://api.example.com')
         eq_(type(config.get_client()), tdclient.Client)
         eq_(config.apikey, 'test-apikey')
-        eq_(config.endpoint, 'https://api.example.com')
+        eq_(config.endpoint, 'https://api.example.com/')
 
 class ConfigLoaderTestCase(TestCase):
     def setUp(self):
