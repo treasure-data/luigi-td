@@ -14,7 +14,7 @@ class TableauServerResultTarget(ResultTarget):
     # optional
     ssl = 'true'
     ssl_verify = 'true'
-    version = None
+    server_version = None
     site = None
     project = None
     mode = 'replace'
@@ -28,7 +28,7 @@ class TableauServerResultTarget(ResultTarget):
         params = {
             'ssl': self.ssl,
             'ssl_verify': self.ssl_verify,
-            'version': self.version,
+            'server_version': self.server_version,
             'site': self.site,
             'project': self.project,
             'mode': self.mode,
@@ -38,4 +38,4 @@ class TableauServerResultTarget(ResultTarget):
 
 class TableauOnlineResultTarget(TableauServerResultTarget):
     server = 'online.tableausoftware.com'
-    version = 'online'
+    server_version = 'online'
