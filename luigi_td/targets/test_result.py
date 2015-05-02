@@ -1,6 +1,6 @@
 from ..test_helper import TestConfig
 from ..client import ResultProxy
-from result import ResultTarget
+from .result import ResultTarget
 
 from unittest import TestCase
 from nose.tools import eq_, raises

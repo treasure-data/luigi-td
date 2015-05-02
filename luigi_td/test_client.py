@@ -1,5 +1,5 @@
-from client import ResultProxy
-from test_helper import MockJob
+from .client import ResultProxy
+from .test_helper import MockJob
 
 from unittest import TestCase
 from nose.tools import eq_, raises
@@ -24,4 +24,4 @@ class ResultProxyTestCase(TestCase):
         eq_(list(result), SUCCESS_JOB['rows'])
         with tempfile.NamedTemporaryFile() as f:
             result.to_csv(f.name)
-            eq_(f.read(), "cnt\n5000\n")
+            eq_(f.read(), b"cnt\n5000\n")

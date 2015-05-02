@@ -1,11 +1,12 @@
 from ..test_helper import TestConfig
-from s3 import S3ResultTarget
+from .s3 import S3ResultTarget
 
 from unittest import TestCase
 from nose.tools import eq_, raises
 
-import urllib
-import urlparse
+from six.moves.urllib.parse import urlparse
+from six.moves.urllib.parse import parse_qs
+from six.moves.urllib.parse import unquote as url_unquote
 
 test_config = TestConfig()
 
@@ -22,10 +23,10 @@ class TableauServerResultTargetTestCase(TestCase):
         target.aws_secret_access_key = 'AWS_SECRET_ACCESS_KEY'
         target.bucket = 'test-bucket'
         target.path = 'test-prefix/test.tsv'
-        url = urlparse.urlparse(target.get_result_url())
-        params = urlparse.parse_qs(url.query)
+        url = urlparse(target.get_result_url())
+        params = parse_qs(url.query)
         eq_(url.scheme, 's3')
         eq_(url.path, '/{0}/{1}'.format(target.bucket, target.path))
-        eq_(urllib.unquote(url.username), target.aws_access_key_id)
-        eq_(urllib.unquote(url.password), target.aws_secret_access_key)
+        eq_(url_unquote(url.username), target.aws_access_key_id)
+        eq_(url_unquote(url.password), target.aws_secret_access_key)
         eq_(params.get('format'), ['tsv'])

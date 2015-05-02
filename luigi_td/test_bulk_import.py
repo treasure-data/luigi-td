@@ -1,11 +1,11 @@
-from bulk_import import BulkImportUploadContext
-from bulk_import import BulkImportTarget
-from bulk_import import BulkImportSession
-from bulk_import import BulkImportUpload
-from bulk_import import BulkImportPerform
-from bulk_import import BulkImport
-from test_helper import MockJob
-from test_helper import TestConfig
+from .bulk_import import BulkImportUploadContext
+from .bulk_import import BulkImportTarget
+from .bulk_import import BulkImportSession
+from .bulk_import import BulkImportUpload
+from .bulk_import import BulkImportPerform
+from .bulk_import import BulkImport
+from .test_helper import MockJob
+from .test_helper import TestConfig
 
 from unittest import TestCase
 from nose.tools import ok_, eq_, raises

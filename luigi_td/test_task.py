@@ -1,8 +1,8 @@
-from test_helper import TestConfig
-from task import DatabaseTask
-from task import TableTask
-from task import Query
-from targets.result import ResultTarget
+from .test_helper import TestConfig
+from .task import DatabaseTask
+from .task import TableTask
+from .task import Query
+from .targets.result import ResultTarget
 
 from unittest import TestCase
 from nose.tools import eq_, raises

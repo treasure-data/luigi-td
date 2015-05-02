@@ -1,4 +1,4 @@
-from client import ResultProxy
+from .client import ResultProxy
 
 import os
 import shutil

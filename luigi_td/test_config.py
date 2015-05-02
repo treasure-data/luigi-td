@@ -1,4 +1,4 @@
-from config import Config, ConfigLoader, get_config, DEFAULT_ENDPOINT
+from .config import Config, ConfigLoader, get_config, DEFAULT_ENDPOINT
 
 from unittest import TestCase
 from nose.tools import eq_, raises
@@ -35,9 +35,9 @@ class ConfigLoaderTestCase(TestCase):
             luigi.configuration.LuigiConfigParser._instance = None
 
     def _config(self, values):
-        with file('client.cfg', 'w') as f:
+        with open('client.cfg', 'w') as f:
             f.write("[td]\n")
-            for key, val in values.iteritems():
+            for key, val in values.items():
                 f.write("{0}: {1}\n".format(key, val))
         luigi.configuration.LuigiConfigParser._instance = None
 

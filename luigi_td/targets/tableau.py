@@ -1,6 +1,7 @@
 from luigi_td.targets.result import ResultTarget
 
-import urllib
+from six.moves.urllib.parse import urlencode
+from six.moves.urllib.parse import quote as url_quote
 
 import logging
 logger = logging.getLogger('luigi-interface')
@@ -24,7 +25,7 @@ class TableauServerResultTarget(ResultTarget):
         for name in ['server', 'username', 'password', 'datasource']:
             if getattr(self, name) is None:
                 raise TypeError('missing option "{0}" for {1}'.format(name, self))
-            reqs[name] = urllib.quote(getattr(self, name))
+            reqs[name] = url_quote(getattr(self, name))
         params = {
             'ssl': self.ssl,
             'ssl_verify': self.ssl_verify,
@@ -33,7 +34,7 @@ class TableauServerResultTarget(ResultTarget):
             'project': self.project,
             'mode': self.mode,
         }
-        reqs['params'] = urllib.urlencode([(key, params[key]) for key in params if params[key] is not None])
+        reqs['params'] = urlencode([(key, params[key]) for key in params if params[key] is not None])
         return "tableau://{username}:{password}@{server}/{datasource}?{params}".format(**reqs)
 
 class TableauOnlineResultTarget(TableauServerResultTarget):

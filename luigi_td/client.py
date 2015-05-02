@@ -1,3 +1,5 @@
+import six
+
 class ResultProxy(object):
     def __init__(self, job):
         self.job = job
@@ -29,8 +31,8 @@ class ResultProxy(object):
             for row in self:
                 f.write(",".join([str(c) if c else '' for c in row]) + "\n")
 
-        if type(path_or_file) in [str, unicode]:
-            with file(path_or_file, 'w') as f:
+        if isinstance(path_or_file, six.string_types):
+            with open(path_or_file, 'w') as f:
                 return _to_csv(f)
         else:
             return _to_csv(path_or_file)

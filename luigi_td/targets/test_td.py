@@ -1,11 +1,8 @@
 from ..test_helper import TestConfig
-from td import DatabaseTarget, TableTarget, SchemaError
+from .td import DatabaseTarget, TableTarget, SchemaError
 
 from unittest import TestCase
 from nose.tools import eq_, raises
-
-import urllib
-import urlparse
 
 test_config = TestConfig(
     databases = ['test_db'],

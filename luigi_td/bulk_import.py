@@ -1,14 +1,15 @@
-from config import get_config
+from .config import get_config
 
 import json
 import os
 import subprocess
 import shutil
 import time
-import urlparse
 import luigi
 import luigi.s3
 import tdclient
+
+from six.moves.urllib.parse import urlparse
 
 import logging
 logger = logging.getLogger('luigi-interface')
@@ -209,7 +210,7 @@ class BulkImport(luigi.Task):
             return os.path.abspath(target.path)
         # S3Target
         if isinstance(target, luigi.s3.S3Target):
-            url = urlparse.urlparse(target.path)
+            url = urlparse(target.path)
             return "s3://{aws_access_key_id}:{aws_secret_access_key}@/{bucket}{path}".format(
                 aws_access_key_id = target.fs.s3.aws_access_key_id,
                 aws_secret_access_key = target.fs.s3.aws_secret_access_key,

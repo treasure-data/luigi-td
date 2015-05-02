@@ -20,12 +20,12 @@ class ResultTarget(luigi.Target):
         state_dir = os.path.dirname(self.path)
         if state_dir != '' and not os.path.exists(state_dir):
             os.makedirs(state_dir)
-        with file(self.path, 'w') as f:
+        with open(self.path, 'w') as f:
             state = {'job_id': result.job_id, 'status': result.status}
             json.dump(state, f)
 
     def load_result_state(self):
-        with file(self.path) as f:
+        with open(self.path) as f:
             return json.load(f)
 
     @property

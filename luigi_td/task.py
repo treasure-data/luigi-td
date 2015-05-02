@@ -115,12 +115,3 @@ class Query(luigi.Task):
         target = self.output()
         if target and isinstance(target, ResultTarget):
             target.save_result_state(result)
-
-        if self.debug:
-            import pandas as pd
-            TERMINAL_WIDTH = 120
-            pd.options.display.width = TERMINAL_WIDTH
-            print '-' * TERMINAL_WIDTH
-            print 'Query result:'
-            print result.to_dataframe()
-            print '-' * TERMINAL_WIDTH
