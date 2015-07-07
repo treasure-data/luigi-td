@@ -89,7 +89,8 @@ class Query(luigi.Task):
                 timeout = None
             while not job.finished():
                 if timeout and time.time() > timeout:
-                    raise Timeout('{0} timed out'.format(self))
+                    raise Timeout('{0} (Job ID {1}) timed out after {2} seconds'.format(
+                        self, job.job_id, self.timeout))
                 time.sleep(2)
         except:
             # kill query on exceptions
