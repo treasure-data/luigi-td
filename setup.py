@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="luigi-td",
-    version='0.6.4',
+    version='0.6.5',
     description="Luigi integration for Treasure Data",
     author="Treasure Data, Inc.",
     author_email="support@treasure-data.com",
