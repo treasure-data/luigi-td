@@ -29,7 +29,7 @@ class TableTask(luigi.Task):
     database_name = luigi.Parameter()
     table_name = luigi.Parameter()
     action = luigi.Parameter(default='create')
-    schema = luigi.Parameter(is_list=True, default=[], significant=False)
+    schema = luigi.Parameter(default=[], significant=False)
     empty = luigi.BooleanParameter(default=False, significant=False)
 
     def requires(self):
