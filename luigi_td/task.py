@@ -29,7 +29,7 @@ class TableTask(luigi.Task):
     database_name = luigi.Parameter()
     table_name = luigi.Parameter()
     action = luigi.Parameter(default='create')
-    schema = luigi.Parameter(default=[], significant=False)
+    schema = luigi.Parameter(default=None, significant=False)
     empty = luigi.BooleanParameter(default=False, significant=False)
 
     def requires(self):
@@ -42,7 +42,7 @@ class TableTask(luigi.Task):
         client = self.config.get_client()
         logger.debug('%s: creating table: %s.%s', self, self.database_name, self.table_name)
         client.create_log_table(self.database_name, self.table_name)
-        if self.schema != []:
+        if self.schema is not None:
             logger.debug('%s: updating schema for %s.%s', self, self.database_name, self.table_name)
             client.update_schema(self.database_name, self.table_name, [s.split(':') for s in self.schema])
 

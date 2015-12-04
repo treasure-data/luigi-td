@@ -133,4 +133,6 @@ class TestConfig(object):
         return os.path.join(self.tmp_dir, filename)
 
     def get_client(self):
-        return MockClient(databases=self._databases, tables=self._tables, jobs=self._jobs, bulk_imports=self._bulk_imports)
+        if not hasattr(self, '_client'):
+            self._client = MockClient(databases=self._databases, tables=self._tables, jobs=self._jobs, bulk_imports=self._bulk_imports)
+        return self._client

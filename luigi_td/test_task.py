@@ -5,7 +5,11 @@ from .task import Query
 from .targets.result import ResultTarget
 
 from unittest import TestCase
-from nose.tools import eq_, raises
+try:
+    from unittest.mock import MagicMock
+except ImportError:
+    from mock import MagicMock
+from nose.tools import ok_, eq_, raises
 
 import luigi
 
@@ -39,7 +43,21 @@ class TestTableTask(TableTask):
 class TableTaskTestCase(TestCase):
     def test_create(self):
         task = TestTableTask('test_db', 'test_table')
+        client = task.config.get_client()
+        client.create_log_table = MagicMock()
+        client.update_schema = MagicMock()
         task.run()
+        client.create_log_table.assert_called_with('test_db', 'test_table')
+        client.update_schema.assert_not_called()
+
+    def test_create_with_schema(self):
+        task = TestTableTask('test_db', 'test_table', schema=['x:string', 'y:int'])
+        client = task.config.get_client()
+        client.create_log_table = MagicMock()
+        client.update_schema = MagicMock()
+        task.run()
+        client.create_log_table.assert_called_with('test_db', 'test_table')
+        client.update_schema.assert_called_with('test_db', 'test_table', [['x', 'string'], ['y', 'int']])
 
 # Query
 
