@@ -61,7 +61,7 @@ class Query(luigi.Task):
     variables = {}
 
     def query(self):
-        return NotImplemented()
+        return NotImplemented
 
     def load_query(self, source):
         env = jinja2.Environment(loader=jinja2.PackageLoader(self.__module__, '.'))
