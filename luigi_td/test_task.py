@@ -81,6 +81,34 @@ class QueryTestCase(TestCase):
         task = SimpleTestQuery()
         task.run()
 
+    def test_priority(self):
+        class PriorityTestQuery(TestQuery):
+            priority = 1
+        task = PriorityTestQuery()
+        client = task.config.get_client()
+        client.query = MagicMock()
+        task.run()
+        client.query.assert_called_with(task.database,
+                                        task.query(),
+                                        priority=1,
+                                        retry_limit=task.retry_limit,
+                                        type=task.type,
+                                        result_url=None)
+
+    def test_retry_limit(self):
+        class RetryLimitTestQuery(TestQuery):
+            retry_limit = 3
+        task = RetryLimitTestQuery()
+        client = task.config.get_client()
+        client.query = MagicMock()
+        task.run()
+        client.query.assert_called_with(task.database,
+                                        task.query(),
+                                        priority=task.priority,
+                                        retry_limit=3,
+                                        type=task.type,
+                                        result_url=None)
+
     def test_with_output(self):
         class OutputTestQuery(TestQuery):
             def output(self):

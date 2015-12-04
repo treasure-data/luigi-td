@@ -89,7 +89,7 @@ class MockClient(object):
             if job.job_id == job_id:
                 return job
 
-    def query(self, database, query, type='hive', result_url=None):
+    def query(self, database, query, priority=None, retry_limit=None, type='hive', result_url=None):
         return MockJob(self._jobs[0])
 
     def bulk_import(self, session):
@@ -125,6 +125,8 @@ class TestConfig(object):
             self.tmp_dir = tempfile.mkdtemp()
 
     def tearDown(self):
+        if hasattr(self, '_client'):
+            del self._client
         if self.tmp_dir:
             shutil.rmtree(self.tmp_dir)
             self.tmp_dir = None

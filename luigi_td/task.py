@@ -55,6 +55,8 @@ class Query(luigi.Task):
     config = get_config()
     debug = False
     timeout = None
+    priority = None
+    retry_limit = None
     type = 'hive'
     database = None
     source = None
@@ -76,6 +78,8 @@ class Query(luigi.Task):
         client = self.config.get_client()
         job = client.query(self.database, 
                            query,
+                           priority = self.priority,
+                           retry_limit = self.retry_limit,
                            type = self.type,
                            result_url = result_url)
         job.update()
