@@ -1,5 +1,6 @@
 *.pyc
 .coverage
+.envrc
 client.cfg
 build
 dist
