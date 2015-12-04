@@ -14,11 +14,11 @@ class ResultProxy(object):
 
     @property
     def size(self):
-        return self.job._result_size
+        return self.job.result_size
 
     @property
     def description(self):
-        return self.job._hive_result_schema
+        return self.job.result_schema
 
     def __iter__(self):
         return self.job.result()

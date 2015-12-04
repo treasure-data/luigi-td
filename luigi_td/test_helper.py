@@ -20,10 +20,10 @@ class MockJob(object):
         self.spec = spec
         self.job_id = spec['job_id']
         self.url = 'https://mock.example.com/jobs/{0}'.format(spec['job_id'])
-        self._result_size = spec.get('size')
-        self._hive_result_schema = spec.get('description', [])
+        self.result_size = spec.get('size')
+        self.result_schema = spec.get('description', [])
 
-    def _update_status(self):
+    def update(self):
         pass
 
     def kill(self):

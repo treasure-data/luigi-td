@@ -78,7 +78,7 @@ class Query(luigi.Task):
                            query,
                            type = self.type,
                            result_url = result_url)
-        job._update_status()
+        job.update()
         logger.info("%s: td.job.url: %s", self, job.url)
 
         # wait for the result
@@ -96,15 +96,15 @@ class Query(luigi.Task):
             # kill query on exceptions
             job.kill()
             raise
-        job._update_status()
+        job.update()
 
         logger.info("%s: td.job.result: job_id=%s status=%s", self, job.job_id, job.status())
 
         if not job.success():
-            stderr = job._debug['stderr']
+            stderr = job.debug['stderr']
             if stderr:
                 logger.error(stderr)
-            raise RuntimeError("job {0} {1}\n\nOutput:\n{2}".format(job.job_id, job.status(), job._debug['cmdout']))
+            raise RuntimeError("job {0} {1}\n\nOutput:\n{2}".format(job.job_id, job.status(), job.debug['cmdout']))
 
         return ResultProxy(job)
 
