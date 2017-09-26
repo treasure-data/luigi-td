@@ -113,8 +113,8 @@ class BulkImportUpload(luigi.Task):
             '--time-column', options['time_column'],
             '--time-format', options['time_format'],
             '--encoding', 'utf-8',
-            '--prepare-parallel', '8',
-            '--parallel', '8',
+            '--prepare-parallel', str(options.get('prepare_parallel', 8)),
+            '--parallel', str(options.get('parallel', 8)),
             '--columns', ','.join([c.split(':')[0] for c in options['columns']]),
             '--column-types', ','.join([c.split(':')[1] for c in options['columns']]),
             # '--error-records-handling', 'abort',
@@ -186,6 +186,8 @@ class BulkImport(luigi.Task):
     time_column = luigi.Parameter(significant=False)
     time_format = luigi.Parameter(significant=False)
     default_timezone = luigi.Parameter(significant=False, default=None)
+    prepare_parallel = luigi.Parameter(significant=False, default=8)
+    parallel = luigi.Parameter(significant=False, default=8)
     # CSV/TSV options
     column_header = luigi.BooleanParameter(significant=False, default=False)
     # steps
@@ -228,6 +230,8 @@ class BulkImport(luigi.Task):
             'columns': self.columns,
             'time_column': self.time_column,
             'time_format': self.time_format,
+            'prepare_parallel': self.prepare_parallel,
+            'parallel': self.parallel,
             'default_timezone': self.default_timezone,
             'column_header': self.column_header,
         }
