@@ -6,7 +6,7 @@
 Luigi-TD documentation
 ======================
 
-Luigi-TD integrates `Treasure Data <http://www.treasuredta.com>`_
+Luigi-TD integrates `Treasure Data <http://www.treasuredata.com>`_
 into `Luigi <http://luigi.readthedocs.org/en/latest/>`_ for your data workflow management.
 
 Contents:
