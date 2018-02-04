@@ -30,7 +30,7 @@ class TableTask(luigi.Task):
     table_name = luigi.Parameter()
     action = luigi.Parameter(default='create')
     schema = luigi.Parameter(default=None, significant=False)
-    empty = luigi.BooleanParameter(default=False, significant=False)
+    empty = luigi.BoolParameter(default=False, significant=False)
 
     def requires(self):
         return DatabaseTask(self.database_name)
@@ -76,7 +76,7 @@ class Query(luigi.Task):
         if isinstance(result, ResultTarget):
             result_url = result.get_result_url()
         client = self.config.get_client()
-        job = client.query(self.database, 
+        job = client.query(self.database,
                            query,
                            priority = self.priority,
                            retry_limit = self.retry_limit,
