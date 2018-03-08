@@ -189,9 +189,9 @@ class BulkImport(luigi.Task):
     prepare_parallel = luigi.Parameter(significant=False, default=8)
     parallel = luigi.Parameter(significant=False, default=8)
     # CSV/TSV options
-    column_header = luigi.BooleanParameter(significant=False, default=False)
+    column_header = luigi.BoolParameter(significant=False, default=False)
     # steps
-    no_commit = luigi.BooleanParameter(default=False)
+    no_commit = luigi.BoolParameter(default=False)
 
     def complete(self):
         client = self.config.get_client()
